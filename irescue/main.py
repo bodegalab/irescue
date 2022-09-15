@@ -12,7 +12,19 @@ import os
 from functools import partial
 
 def parseArguments():
-    parser = argparse.ArgumentParser(prog='IRescue', usage='##usage##', description='##desc##', epilog='##epilog##')
+    parser = argparse.ArgumentParser(
+        prog='IRescue',
+        usage='''
+Automatically download TE annotation:
+    irescue -b <file.bam> -g <genome_assembly> [OPTIONS]
+Provide a custom TE annotation:
+    irescue -b <file.bam> -r <repeatmasker.bed> [OPTIONS]
+''',
+        description='''IRescue (Interspersed Repeats single-cell quantifier):
+a tool for quantifying tansposable elements expression in scRNA-seq.
+''',
+        epilog='Home page: https://github.com/bodegalab/irescue'
+    )
     parser.add_argument('-b','--bam', required=True, help='scRNA-seq reads aligned to a reference genome')
     parser.add_argument('-r', '--regions', default=False, help='Genomic TE coordinates in bed format. Takes priority over --genome paramter (default: False).')
     parser.add_argument('-g', '--genome', default=False, help='Genome assembly symbol. One of: {} (default: False)'.format(','.join(__genomes__.keys())))
