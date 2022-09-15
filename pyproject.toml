@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "IRescue"
+description = "Interspersed Repeats singl-cell quantifier"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Benedetto Polimeni", email = "polimeni@ingm.org" },
+]
+keywords = [
+    "bioinformatics",
+    "transposable-elements",
+    "scrna-seq",
+    "single-cell",
+    "single-cell-rna-seq",
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "numpy >= 1.20.2",
+    "pysam >= 0.16.0.1",
+    "requests >= 2.27.1",
+]
+dynamic = ["version"]
+
+[project.scripts]
+irescue = "irescue.main:main"
+
+[project.urls]
+"Source Code" = "https://github.com/bodegalab/irescue"
+Documentation = "https://github.com/bodegalab/irescue#readme"
+"Bug Tracker" = "https://github.com/bodegalab/irescue/issues"
+
+[tool.setuptools_scm]
+write_to = "irescue/_version.py"
