@@ -1,3 +1,7 @@
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/bodegalab/irescue/Upload%20Python%20Package?logo=github)
+[![PyPI](https://img.shields.io/pypi/v/irescue?logo=python)](https://pypi.org/project/irescue/)
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat&logo=anaconda)](https://bioconda.github.io/recipes/irescue/README.html)
+
 # IRescue
 
 IRescue is a software for quantifying the expression of transposable elements (TEs) subfamilies in single cell RNA sequencing (scRNA-seq) data.
@@ -6,6 +10,8 @@ The core feature of IRescue is to consider all multiple alignments (i.e. non-pri
 ## Content
 
 - [Installation](#installation)
+  - [Conda](#conda)
+  - [Pip](#pip)
 - [Usage](#usage)
   - [Quick start](#quick_start)
   - [Output files](#output_files)
@@ -13,22 +19,20 @@ The core feature of IRescue is to consider all multiple alignments (i.e. non-pri
 
 ## <a name="installation"></a>Installation
 
-We advise installing IRescue in a conda environment with all required software:
+### <a name="conda"></a>Using conda (recommended)
+
+We recommend using conda, as it will install all the required packages along IRescue.
 
 ```bash
-# clone this repository
-git clone https://github.com/bepoli/irescue
-cd irescue
+conda create -n irescue -c conda-forge -c bioconda irescue
+```
 
-# create a conda environment
-conda env create -f docker/environment.yaml -n irescue
-conda activate irescue
+### <a name="pip"></a>Using pip
 
-# install irescue
-pip install .
+If for any reason it's not possible or desiderable to use conda, it can be installed with pip and the following requirements must be installed manually: `python>=3.7`, `samtools>=1.12` and `bedtools>=2.30.0`.
 
-# test the installation
-irescue --help
+```bash
+pip install irescue
 ```
 
 ## <a name="usage"></a>Usage
