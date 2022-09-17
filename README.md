@@ -2,16 +2,16 @@
 [![PyPI](https://img.shields.io/pypi/v/irescue?logo=python)](https://pypi.org/project/irescue/)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat&logo=anaconda)](https://bioconda.github.io/recipes/irescue/README.html)
 
-# IRescue
+# IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
 
-IRescue is a software for quantifying the expression of transposable elements (TEs) subfamilies in single cell RNA sequencing (scRNA-seq) data.
-The core feature of IRescue is to consider all multiple alignments (i.e. non-primary alignments) of reads/UMIs mapping on multiple TEs in a BAM file, to better infer the TE subfamily of origin. IRescue implements a UMI error-correction, deduplication and quantification strategy that includes such alignment events. IRescue's output is compatible with most scRNA-seq analysis toolkits, such as Seurat or Scanpy.
+<img align="right" height="160" src="docs/logo.png">
+IRescue is a software for quantifying the expression of transposable elements (TEs) subfamilies in single cell RNA sequencing (scRNA-seq) data. The core feature of IRescue is to consider all multiple alignments (i.e. non-primary alignments) of reads/UMIs mapping on multiple TEs in a BAM file, to accurately infer the TE subfamily of origin. IRescue implements a UMI error-correction, deduplication and quantification strategy that includes such alignment events. IRescue's output is compatible with most scRNA-seq analysis toolkits, such as Seurat or Scanpy.
 
 ## Content
 
 - [Installation](#installation)
-  - [Conda](#conda)
-  - [Pip](#pip)
+  - [Using conda](#conda)
+  - [Using pip](#pip)
 - [Usage](#usage)
   - [Quick start](#quick_start)
   - [Output files](#output_files)
