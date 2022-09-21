@@ -1,6 +1,7 @@
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/bodegalab/irescue/Upload%20Python%20Package?logo=github)
 [![PyPI](https://img.shields.io/pypi/v/irescue?logo=python)](https://pypi.org/project/irescue/)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat&logo=anaconda)](https://bioconda.github.io/recipes/irescue/README.html)
+[![Paper](https://img.shields.io/badge/DOI-10.1101%2F2022.09.16.508229-blue)](https://doi.org/10.1101/2022.09.16.508229)
 
 # IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
 
@@ -16,6 +17,7 @@ IRescue is a software for quantifying the expression of transposable elements (T
   - [Quick start](#quick_start)
   - [Output files](#output_files)
   - [Load IRescue data with Seurat](#seurat)
+- [Cite](#cite)
 
 ## <a name="installation"></a>Installation
 
@@ -87,3 +89,9 @@ An object of class Seurat
 Active assay: RNA (31078 features, 0 variable features)
  1 other assay present: TE
 ```
+
+## <a name="cite"></a>Cite
+
+Polimeni B, Marasca F, Ranzani V, Bodega B.
+IRescue: single cell uncertainty-aware quantification of transposable elements expression.
+bioRxiv 2022.09.16.508229; doi: https://doi.org/10.1101/2022.09.16.508229
