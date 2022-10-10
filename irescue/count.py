@@ -149,7 +149,8 @@ def count(mappings_file, outdir, tmpdir, features, intcount, verbose, bc_split):
         for line in data:
             # gather barcode, umi and feature from mappings file
             cx, ux, te = line.decode('utf-8').strip().split('\t')
-            te = te[:te.index('~')]
+            if '~' in te:
+                te = te[:te.index('~')]
 
             if len(barcodes)==0:
                 # interrupt loop when reaching the end of the barcodes chunk
