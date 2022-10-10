@@ -136,7 +136,7 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, tmpdir, samtools, bedtools,
     cmd = f'{bedtools} intersect -a {stream} -b {refFile} -split -bed -wo -sorted | '
     # remove mate information from read name and
     # concatenate CB and UMI with feature name
-    cmd += ' awk \'{ sub(/\/[12]$/,"",$4); split($4,qname,/\//); $4=qname[2]"\\t"qname[3]"\\t"$16 } '
+    cmd += ' awk \'{ sub(/\/[12]$/,"",$4); n=split($4,qname,/\//); $4=qname[n-1]"\\t"qname[n]"\\t"$16 } '
     #cmd += ' !x[$4]++ {OFS="\\t"; print $4}\' | '
     cmd += ' {OFS="\\t"; print $4}\' | '
     cmd += f' gzip > {isecFile}'
