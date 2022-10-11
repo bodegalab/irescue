@@ -136,7 +136,7 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, tmpdir, samtools, bedtools,
     cmd = f'{bedtools} intersect -a {stream} -b {refFile} -split -bed -wo -sorted | '
     # remove mate information from read name and
     # concatenate CB and UMI with feature name
-    cmd += ' awk \'{ sub(/\/[12]$/,"",$4); split($4,qname,/\//); $4=qname[2]"\\t"qname[3]"\\t"$16 } '
+    cmd += ' awk \'{ sub(/\/[12]$/,"",$4); n=split($4,qname,/\//); $4=qname[n-1]"\\t"qname[n]"\\t"$16 } '
     #cmd += ' !x[$4]++ {OFS="\\t"; print $4}\' | '
     cmd += ' {OFS="\\t"; print $4}\' | '
     cmd += f' gzip > {isecFile}'
@@ -162,10 +162,10 @@ def chrcat(filesList, threads, outdir, tmpdir, verbose):
     cmd1 = f'zcat {mappings_file} | cut -f1 | uniq | gzip > {barcodes_file} '
     cmd2 = f'zcat {mappings_file} '
     cmd2 += ' | awk \'!x[$3]++ { '
-    #cmd2 += ' split($3,a,"~"); OFS="\\t"; print a[1],a[2],"Gene Expression" '
     cmd2 += ' split($3,a,"~"); '
     # avoid subfamilies with the same name
     cmd2 += ' if(a[1] in sf) { sf[a[1]]+=1 } else { sf[a[1]] }; '
+    cmd2 += ' if(length(a)<2) { a[2]=a[1] }; '
     cmd2 += ' print a[1] sf[a[1]] "\\t" a[2] "\\tGene Expression" '
     cmd2 += ' }\' '
     cmd2 += f' | sort -u | gzip > {features_file} '

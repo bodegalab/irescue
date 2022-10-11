@@ -2,7 +2,7 @@
 
 import argparse
 from shutil import rmtree
-from importlib.metadata import version
+from irescue._version import __version__
 from irescue._genomes import __genomes__
 from irescue.misc import writerr
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat, checkIndex
@@ -39,7 +39,7 @@ a tool for quantifying tansposable elements expression in scRNA-seq.
     parser.add_argument('--samtools', type=str, default='samtools', help='Path to samtools binary, in case it\'s not in PATH (Default: samtools)')
     parser.add_argument('--bedtools', type=str, default='bedtools', help='Path to bedtools binary, in case it\'s not in PATH (Default: bedtools)')
     parser.add_argument('-v', '--verbose', default=False, action='store_true', help='Writes a lot of stuff to stderr, such as chromosomes as they are mapped and cell barcodes as they are processed.')
-    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(version(parser.prog)), help='Print software\'s version and exit')
+    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(__version__), help='Print software\'s version and exit')
     return parser
 
 def main():
