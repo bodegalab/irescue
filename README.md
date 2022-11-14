@@ -13,6 +13,7 @@ IRescue is a software for quantifying the expression of transposable elements (T
 - [Installation](#installation)
   - [Using conda](#conda)
   - [Using pip](#pip)
+  - [Container (Docker/Singularity)](#container)
 - [Usage](#usage)
   - [Quick start](#quick_start)
   - [Output files](#output_files)
@@ -35,6 +36,17 @@ If for any reason it's not possible or desiderable to use conda, it can be insta
 
 ```bash
 pip install irescue
+```
+
+### <a name="container"></a>Container (Docker/Singularity)
+
+Docker and Singularity containers are available for each conda release of IRescue. Choose the `TAG` corresponding to the desired IRescue version [from the Biocontainers repository](https://quay.io/repository/biocontainers/irescue?tab=tags) and pull or execute the container with Docker or Singularity:
+
+```bash
+# Example using Docker
+docker run quay.io/biocontainers/irescue:$TAG irescue --help
+# Example using Singularity
+singularity exec https://depot.galaxyproject.org/singularity/irescue:$TAG irescue --help
 ```
 
 ## <a name="usage"></a>Usage
