@@ -69,14 +69,21 @@ def main():
     # decompress whitelist if compressed
     whitelist = prepare_whitelist(args.whitelist, args.tmpdir)
 
-    # multiprocess execution of isec()
-    pool = multiprocessing.Pool(args.threads)
-    func = partial(
+    # allocate threads
+    if args.threads > 1:
+        pool = multiprocessing.Pool(args.threads)
+
+    # execute intersection between reads and TE coordinates
+    isecFun = partial(
         isec, args.bam, regions, whitelist, args.CBtag, args.UMItag,
         args.tmpdir, args.samtools, args.bedtools, args.verbose
     )
-    isecFiles = pool.map(func, chrNames)
-    # concatenate results
+    if args.threads > 1:
+        isecFiles = pool.map(isecFun, chrNames)
+    else:
+        isecFiles = list(map(isecFun, chrNames))
+
+    # concatenate intersection results
     mappings_file, barcodes_file, features_file = chrcat(
         isecFiles, threads=args.threads, outdir=args.outdir,
         tmpdir=args.tmpdir, verbose=args.verbose
@@ -89,11 +96,19 @@ def main():
     ftlist = dict(parse_features(features_file))
 
     # calculate TE counts
-    #counts = count(mappings_file, outdir=args.outdir, intcount=args.integers)
     countFun = partial(
-        count, mappings_file, args.outdir, args.tmpdir, ftlist, args.integers, args.verbose
+        count, mappings_file, args.outdir, args.tmpdir, ftlist, args.integers,
+        args.verbose
     )
-    mtxFiles = pool.map(countFun, bc_per_thread)
+    if args.threads > 1:
+        mtxFiles = pool.map(countFun, bc_per_thread)
+    else:
+        mtxFiles = list(map(countFun, bc_per_thread))
+    
+    # close processes pool
+    if args.threads > 1:
+        pool.close()
+        pool.join()
 
     # concatenate matrix files chunks
     matrix_file = formatMM(
