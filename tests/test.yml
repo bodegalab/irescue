@@ -1,5 +1,5 @@
 - name: irescue toy regions whitelist
-  command: irescue -b ./tests/Aligned.sortedByCoord.out.bam -r ./tests/rmsk.GRCm38.chr19.bed.gz -w ./tests/whitelist.txt
+  command: irescue -b ./tests/Aligned.sortedByCoord.out.bam -r ./tests/rmsk.GRCm38.chr19.bed.gz -w ./tests/whitelist.txt --keeptmp
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
       md5sum: 7d763fd204cd373df8917590c18b65b4

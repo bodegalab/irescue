@@ -52,3 +52,5 @@ jobs:
           path: |
             /home/runner/pytest_workflow_*/*/log.out
             /home/runner/pytest_workflow_*/*/log.err
+            /home/runner/pytest_workflow_*/*/IRescue_out
+            /home/runner/pytest_workflow_*/*/IRescue_tmp
