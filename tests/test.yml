@@ -4,6 +4,6 @@
     - path: "IRescue_out/barcodes.tsv.gz"
       md5sum: 7d763fd204cd373df8917590c18b65b4
     - path: "IRescue_out/features.tsv.gz"
-      md5sum: c6fe50284e1d5973c2796598765cca8a
+      md5sum: 3ead1d11d26d33b446855f13f692e623
     - path: "IRescue_out/matrix.mtx.gz"
-      md5sum: 5e87215656b72f6586e7afdf6fd6a042
+      md5sum: 91ed10c144bb45db5aab76720afa1681
