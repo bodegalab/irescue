@@ -1,0 +1,63 @@
+name: Pytest-workflow
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    name: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.3.0
+      #- name: Setup Python
+      #  uses: actions/setup-python@v4.4.0
+      #  with:
+      #    python-version: "3.x"
+      #- name: Install Python dependencies
+      #  run: |
+      #    python -m pip install --upgrade pip
+      #    python -m pip install --upgrade pytest-workflow
+      #    python -m pip install .
+      - name: Setup conda
+        uses: conda-incubator/setup-miniconda@v2.2.0
+        with:
+          environment-file: tests/environment.yml
+          condarc-file: tests/condarc.yml
+          auto-update-conda: true
+      
+      - name: Install Python dependencies
+        shell: bash -el {0}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest-workflow
+          python -m pip install .
+
+      - name: Run pytest-workflow
+        shell: bash -el {0}
+        run: TMPDIR=~ pytest --symlink --kwdof --git-aware --color=yes
+
+      - name: Output log on failure
+        if: failure()
+        run: |
+          cat /home/runner/pytest_workflow_*/*/log.{out,err}
+          env
+          which bedtools && bedtools --version
+          which samtools && samtools --version
+          which python && python --version
+  
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          path: |
+            /home/runner/pytest_workflow_*/*/log.out
+            /home/runner/pytest_workflow_*/*/log.err
+            /home/runner/pytest_workflow_*/*/IRescue_out
+            /home/runner/pytest_workflow_*/*/IRescue_tmp
