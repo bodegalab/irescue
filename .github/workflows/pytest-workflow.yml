@@ -43,7 +43,12 @@ jobs:
 
       - name: Output log on failure
         if: failure()
-        run: cat /home/runner/pytest_workflow_*/*/log.{out,err}
+        run: |
+          cat /home/runner/pytest_workflow_*/*/log.{out,err}
+          env
+          which bedtools && bedtools --version
+          which samtools && samtools --version
+          which python && python --version
   
       - name: Upload logs on failure
         if: failure()
