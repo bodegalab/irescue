@@ -168,7 +168,7 @@ def chrcat(filesList, threads, outdir, tmpdir, verbose):
     cmd2 += ' if(length(a)<2) { a[2]=a[1] }; '
     cmd2 += ' print a[1] sf[a[1]] "\\t" a[2] "\\tGene Expression" '
     cmd2 += ' }\' '
-    cmd2 += f' | sort -u | gzip > {features_file} '
+    cmd2 += f' | LC_ALL=C sort -u | gzip > {features_file} '
 
     writerr('Concatenating mappings', verbose)
     run_shell_cmd(cmd0)

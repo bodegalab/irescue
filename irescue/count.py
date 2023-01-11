@@ -222,10 +222,10 @@ def formatMM(matrix_files, outdir, features, barcodes):
     mmsize = sum(getlen(f) for f in matrix_files)
     mmheader = '%%MatrixMarket matrix coordinate real general\n'
     mmtotal = f'{features_count} {barcodes_count} {mmsize}\n'
-    with gzip.open(matrix_out, 'wb') as mmout:
+    with gzip.GzipFile(matrix_out, 'wb', mtime=0) as mmout:
         mmout.write(mmheader.encode())
         mmout.write(mmtotal.encode())
     mtxstr = ' '.join(matrix_files)
-    cmd = f'zcat {mtxstr} | sort -k2,2n -k1,1n | gzip >> {matrix_out}'
+    cmd = f'zcat {mtxstr} | LC_ALL=C sort -k2,2n -k1,1n | gzip >> {matrix_out}'
     run_shell_cmd(cmd)
     return(matrix_out)
