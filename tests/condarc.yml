@@ -1,0 +1,5 @@
+channels:
+  - defaults
+  - bioconda
+  - conda-forge
+channel_priority: strict
