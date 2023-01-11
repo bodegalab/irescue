@@ -226,6 +226,6 @@ def formatMM(matrix_files, outdir, features, barcodes):
         mmout.write(mmheader.encode())
         mmout.write(mmtotal.encode())
     mtxstr = ' '.join(matrix_files)
-    cmd = f'zcat {mtxstr} | sort -k2,2n -k1,1n | gzip >> {matrix_out}'
+    cmd = f'zcat {mtxstr} | LC_ALL=C sort -k2,2n -k1,1n | gzip >> {matrix_out}'
     run_shell_cmd(cmd)
     return(matrix_out)
