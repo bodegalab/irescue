@@ -41,13 +41,15 @@ jobs:
 
       - name: Output log on failure
         if: failure()
+        shell: bash -el {0}
         run: |
           cat /home/runner/pytest_workflow_*/*/log.{out,err}
           env
           which bedtools && bedtools --version
           which samtools && samtools --version
           which python && python --version
-  
+          conda list -n test
+
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v3.1.2
