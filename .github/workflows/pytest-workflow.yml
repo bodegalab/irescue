@@ -2,6 +2,10 @@ name: Pytest-workflow
 on:
   push:
     branches: [main]
+    paths:
+      - 'irescue/**'
+      - 'tests/**'
+      - '.github/workflows/pytest-workflow.yml'
   pull_request:
     branches: [main]
 
