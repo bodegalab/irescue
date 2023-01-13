@@ -24,8 +24,8 @@ jobs:
       - name: Setup conda
         uses: conda-incubator/setup-miniconda@v2.2.0
         with:
-          environment-file: tests/environment.yml
-          condarc-file: tests/condarc.yml
+          environment-file: tests/config/environment.yml
+          condarc-file: tests/config/condarc.yml
           auto-update-conda: true
       
       - name: Install Python dependencies
