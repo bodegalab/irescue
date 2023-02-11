@@ -44,9 +44,13 @@ pip install irescue
 Docker and Singularity containers are available for each conda release of IRescue. Choose the `TAG` corresponding to the desired IRescue version [from the Biocontainers repository](https://quay.io/repository/biocontainers/irescue?tab=tags) and pull or execute the container with Docker or Singularity:
 
 ```bash
-# Example using Docker
+# Get latest biocontainers tag (with curl and python3, otherwise check the above link for the desired version/tag)
+TAG=$(curl -s -X GET https://quay.io/api/v1/repository/biocontainers/irescue/tag/ | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["tags"][0]["name"])')
+
+# Run with Docker
 docker run quay.io/biocontainers/irescue:$TAG irescue --help
-# Example using Singularity
+
+# Run with Singularity
 singularity exec https://depot.galaxyproject.org/singularity/irescue:$TAG irescue --help
 ```
 
