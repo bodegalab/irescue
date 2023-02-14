@@ -91,12 +91,25 @@ def prepare_whitelist(whitelist, tmpdir):
     return whitelist
 
 # Get list of reference names from BAM file, skipping those without reads.
-def getRefs(bamFile):
+def getRefs(bamFile, bedFile):
     chrNames = list()
     for line in idxstats(bamFile).strip().split('\n'):
         l = line.strip().split('\t')
         if int(l[2])>0:
             chrNames.append(l[0])
+    bedChrNames = set()
+    if testGz(bedFile):
+        with gzopen(bedFile, 'rb') as f:
+            for line in f:
+                bedChrNames.add(line.decode().split('\t')[0])
+    else:
+        with open(bedFile, 'r') as f:
+            for line in f:
+                bedChrNames.add(line.split('\t')[0])
+    skipChr = [x for x in chrNames if x not in bedChrNames]
+    if skipChr:
+        writerr('WARNING: The following references are not present in the TE annotation and will be skipped: ' + ', '.join(skipChr))
+        chrNames = [x for x in chrNames if x in bedChrNames]
     return chrNames
 
 # Intersect reads with repeatmasker regions. Return the intersection file path.
