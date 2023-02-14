@@ -140,48 +140,65 @@ def count(mappings_file, outdir, tmpdir, features, intcount, verbose, bc_split):
     barcodes = dict(bc_split[1])
     writerr(f'Processing {len(barcodes)} barcodes from chunk {chunkn}', verbose)
 
+    # get number of lines in mappings_file
+    nlines = getlen(mappings_file)
+
+    # initialize mappings dictionary {UMI: {FEATURE: COUNT}}
+    maps = dict()
+
+    # cell barcode placeholder
+    cell = None
+
     with gzip.open(mappings_file, 'rb') as data, \
     gzip.open(matrix_file, 'wb') as mtxFile:
 
-        # placeholder for current cell variable
-        cell = False
-
-        for line in data:
+        for line in enumerate(data, start=1):
             # gather barcode, umi and feature from mappings file
-            cx, ux, te = line.decode('utf-8').strip().split('\t')
+            cx, ux, te = line[1].decode('utf-8').strip().split('\t')
             if '~' in te:
                 te = te[:te.index('~')]
 
             if len(barcodes)==0:
                 # interrupt loop when reaching the end of the barcodes chunk
                 break
-            elif not cx in barcodes:
-                # skip to next line
-                continue
-            elif cx in barcodes and not cell:
-                # initialize first cell barcode and mappings dictionary
-                cell = cx
+
+            if not cell:
+                # skip to the first cell barcode contained in the current barcodes chunk
+                if cx not in barcodes:
+                    continue
+                else:
+                    cell = cx
+
+            # if cell barcode changes, compute counts from previous cell's mappings
+            if cx != cell:
+                cellidx = barcodes.pop(cell)
+                writerr(f'[{chunkn}] Computing counts for cell barcode {cellidx} ({cell})', verbose)
+                # compute final counts of the cell
+                counts = cellCount(maps, intcount=intcount)
+                # arrange counts in a data frame and write to text file
+                lines = [ f'{str(k)} {str(cellidx)} {str(v)}\n'.encode() \
+                        for k, v in counts.items() ]
+                mtxFile.writelines(lines)
+                # re-initialize mappings dict
                 maps = dict()
 
-            # parse mappings by cell
-            if cx == cell:
-                # retrieve feature ID from dictionary
-                teidx = features[te]
-                if ux not in maps:
-                    # initialize UMI if not in mappings dictionary
-                    maps[ux] = dict()
-                if teidx in maps[ux]:
-                    # initialize feature count for UMI
-                    maps[ux][teidx]+=1
-                else:
-                    # add count to existing feature in UMI
-                    maps[ux][teidx]=1
+            # add features count to mappings dict
+            cell = cx
+            teidx = features[te]
+            if ux not in maps:
+                # initialize UMI if not in mappings dict
+                maps[ux] = dict()
+            if teidx in maps[ux]:
+                # initialize feature count for UMI
+                maps[ux][teidx]+=1
+            else:
+                # add count to existing feature in UMI
+                maps[ux][teidx]=1
 
-            # reached end of cell mappings, compute counts and go to next cell
-            if cx!=cell:
-                cellidx = barcodes[cell]
-                writerr(f'Computing counts for cell barcode {cellidx} ({cell})', verbose)
-
+            # if end of file is reached, compute counts from current cell's mappings
+            if line[0] == nlines:
+                cellidx = barcodes.pop(cell)
+                writerr(f'[{chunkn}] [file_end] Computing counts for cell barcode {cellidx} ({cell})', verbose)
                 # compute final counts of the cell
                 counts = cellCount(maps, intcount=intcount)
                 # arrange counts in a data frame and write to text file
@@ -189,26 +206,6 @@ def count(mappings_file, outdir, tmpdir, features, intcount, verbose, bc_split):
                         for k, v in counts.items() ]
                 mtxFile.writelines(lines)
 
-                # remove cell from barcodes chunk
-                barcodes.pop(cell)
-
-                # go to next cell an initialize new mappings
-                if len(barcodes)==0:
-                    break
-                elif cx in barcodes:
-                    cell = cx
-                    maps = dict()
-                    # retrieve feature ID from dictionary
-                    teidx = features[te]
-                    if ux not in maps:
-                        # initialize UMI if not in mappings dictionary
-                        maps[ux] = dict()
-                    if teidx in maps[ux]:
-                        # initialize feature count for UMI
-                        maps[ux][teidx]+=1
-                    else:
-                        # add count to existing feature in UMI
-                        maps[ux][teidx]=1
     writerr(f'Barcodes chunk {chunkn} written to {matrix_file}', verbose)
     return matrix_file
 

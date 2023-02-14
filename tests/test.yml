@@ -1,9 +1,19 @@
 - name: irescue toy regions whitelist
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.GRCm38.chr19.bed.gz -w ./tests/data/whitelist.txt --keeptmp
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.GRCm38.chr19.bed.gz -w ./tests/data/whitelist.txt --keeptmp --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
       md5sum: 7d763fd204cd373df8917590c18b65b4
     - path: "IRescue_out/features.tsv.gz"
       md5sum: 3ead1d11d26d33b446855f13f692e623
     - path: "IRescue_out/matrix.mtx.gz"
-      md5sum: 91ed10c144bb45db5aab76720afa1681
+      md5sum: a615f85c758f6dafc9dd3b026a72f5be
+
+- name: irescue toy regions whitelist multithreading
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.GRCm38.chr19.bed.gz -w ./tests/data/whitelist.txt --keeptmp -p 2 --verbose
+  files:
+    - path: "IRescue_out/barcodes.tsv.gz"
+      md5sum: 7d763fd204cd373df8917590c18b65b4
+    - path: "IRescue_out/features.tsv.gz"
+      md5sum: 3ead1d11d26d33b446855f13f692e623
+    - path: "IRescue_out/matrix.mtx.gz"
+      md5sum: a615f85c758f6dafc9dd3b026a72f5be
