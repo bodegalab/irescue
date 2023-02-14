@@ -64,7 +64,7 @@ def main():
                        outname='rmsk.bed')
 
     # get list of reference names from bam
-    chrNames = getRefs(args.bam)
+    chrNames = getRefs(args.bam, args.regions)
 
     # decompress whitelist if compressed
     whitelist = prepare_whitelist(args.whitelist, args.tmpdir)
