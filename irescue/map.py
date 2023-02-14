@@ -106,7 +106,10 @@ def getRefs(bamFile, bedFile):
         with open(bedFile, 'r') as f:
             for line in f:
                 bedChrNames.add(line.split('\t')[0])
-    chrNames = [x for x in chrNames if x in bedChrNames]
+    skipChr = [x for x in chrNames if x not in bedChrNames]
+    if skipChr:
+        writerr('WARNING: The following references are not present in the TE annotation and will be skipped: ' + ', '.join(skipChr))
+        chrNames = [x for x in chrNames if x in bedChrNames]
     return chrNames
 
 # Intersect reads with repeatmasker regions. Return the intersection file path.
