@@ -19,6 +19,6 @@ __genomes__ = {
     'dm6': ('https://hgdownload.soe.ucsc.edu/goldenPath/dm6/bigZips/dm6.fa.out.gz', 3),
 
     # test
-    'test': ('https://raw.githubusercontent.com/bodegalab/irescue/main/rmsk.out.gz', 3)
+    'test': ('https://raw.githubusercontent.com/bodegalab/irescue/main/tests/data/rmsk.out.gz', 3)
 
 }
