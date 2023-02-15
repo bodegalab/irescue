@@ -1,19 +1,80 @@
-- name: irescue toy regions whitelist
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.GRCm38.chr19.bed.gz -w ./tests/data/whitelist.txt --keeptmp --verbose
+- name: irescue genome
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -g test --keeptmp --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
-      md5sum: 7d763fd204cd373df8917590c18b65b4
+      md5sum: 1a74fa12e65ac1703bbe61282854f151
     - path: "IRescue_out/features.tsv.gz"
-      md5sum: 3ead1d11d26d33b446855f13f692e623
+      md5sum: e8bf21611afd1f40d722ed985f4e3392
     - path: "IRescue_out/matrix.mtx.gz"
-      md5sum: a615f85c758f6dafc9dd3b026a72f5be
+      md5sum: 459fdb436dfe90c41d1de59b2376b5ab
 
-- name: irescue toy regions whitelist multithreading
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.GRCm38.chr19.bed.gz -w ./tests/data/whitelist.txt --keeptmp -p 2 --verbose
+- name: irescue genome multiprocessing
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -g test -p 2 --keeptmp --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
-      md5sum: 7d763fd204cd373df8917590c18b65b4
+      md5sum: 1a74fa12e65ac1703bbe61282854f151
     - path: "IRescue_out/features.tsv.gz"
-      md5sum: 3ead1d11d26d33b446855f13f692e623
+      md5sum: e8bf21611afd1f40d722ed985f4e3392
     - path: "IRescue_out/matrix.mtx.gz"
-      md5sum: a615f85c758f6dafc9dd3b026a72f5be
+      md5sum: 459fdb436dfe90c41d1de59b2376b5ab
+
+- name: irescue coords
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --keeptmp --verbose
+  files:
+    - path: "IRescue_out/barcodes.tsv.gz"
+      md5sum: 1a74fa12e65ac1703bbe61282854f151
+    - path: "IRescue_out/features.tsv.gz"
+      md5sum: e8bf21611afd1f40d722ed985f4e3392
+    - path: "IRescue_out/matrix.mtx.gz"
+      md5sum: 459fdb436dfe90c41d1de59b2376b5ab
+
+- name: irescue coords multiprocessing
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -p 2 --keeptmp --verbose
+  files:
+    - path: "IRescue_out/barcodes.tsv.gz"
+      md5sum: 1a74fa12e65ac1703bbe61282854f151
+    - path: "IRescue_out/features.tsv.gz"
+      md5sum: e8bf21611afd1f40d722ed985f4e3392
+    - path: "IRescue_out/matrix.mtx.gz"
+      md5sum: 459fdb436dfe90c41d1de59b2376b5ab
+
+
+- name: irescue whitelist genome
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -g test -w ./tests/data/whitelist.txt --keeptmp --verbose
+  files:
+    - path: "IRescue_out/barcodes.tsv.gz"
+      md5sum: 95dccc15cbee4feeeae2fbce4d7b41ad
+    - path: "IRescue_out/features.tsv.gz"
+      md5sum: 2dcec6f4aead5faba9c1af44b0129b55
+    - path: "IRescue_out/matrix.mtx.gz"
+      md5sum: 078c7bfa4182491749276823c8637d4a
+
+- name: irescue whitelist genome multiprocessing
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -g test -p 2 -w ./tests/data/whitelist.txt --keeptmp --verbose
+  files:
+    - path: "IRescue_out/barcodes.tsv.gz"
+      md5sum: 95dccc15cbee4feeeae2fbce4d7b41ad
+    - path: "IRescue_out/features.tsv.gz"
+      md5sum: 2dcec6f4aead5faba9c1af44b0129b55
+    - path: "IRescue_out/matrix.mtx.gz"
+      md5sum: 078c7bfa4182491749276823c8637d4a
+
+- name: irescue whitelist coords
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -w ./tests/data/whitelist.txt --keeptmp --verbose
+  files:
+    - path: "IRescue_out/barcodes.tsv.gz"
+      md5sum: 95dccc15cbee4feeeae2fbce4d7b41ad
+    - path: "IRescue_out/features.tsv.gz"
+      md5sum: 2dcec6f4aead5faba9c1af44b0129b55
+    - path: "IRescue_out/matrix.mtx.gz"
+      md5sum: 078c7bfa4182491749276823c8637d4a
+
+- name: irescue whitelist coords multiprocessing
+  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -w ./tests/data/whitelist.txt --keeptmp -p 2 --verbose
+  files:
+    - path: "IRescue_out/barcodes.tsv.gz"
+      md5sum: 95dccc15cbee4feeeae2fbce4d7b41ad
+    - path: "IRescue_out/features.tsv.gz"
+      md5sum: 2dcec6f4aead5faba9c1af44b0129b55
+    - path: "IRescue_out/matrix.mtx.gz"
+      md5sum: 078c7bfa4182491749276823c8637d4a

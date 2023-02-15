@@ -1,4 +1,6 @@
-# dictionary with RepeatMasker files urls for each genome assembly
+# Dictionary with RepeatMasker files urls for each genome assembly, along with
+# the number of lines taken by the header.
+
 __genomes__ = {
 
     # human
@@ -15,5 +17,8 @@ __genomes__ = {
 
     # fly
     'dm6': ('https://hgdownload.soe.ucsc.edu/goldenPath/dm6/bigZips/dm6.fa.out.gz', 3),
+
+    # test
+    'test': ('https://raw.githubusercontent.com/bodegalab/irescue/main/rmsk.out.gz', 3)
 
 }
