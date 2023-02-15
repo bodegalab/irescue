@@ -170,7 +170,7 @@ def count(mappings_file, outdir, tmpdir, features, intcount, verbose, bc_split):
                     cell = cx
 
             # if cell barcode changes, compute counts from previous cell's mappings
-            if cx != cell:
+            if cx != cell and cell in barcodes:
                 cellidx = barcodes.pop(cell)
                 writerr(f'[{chunkn}] Computing counts for cell barcode {cellidx} ({cell})', verbose)
                 # compute final counts of the cell
@@ -181,22 +181,25 @@ def count(mappings_file, outdir, tmpdir, features, intcount, verbose, bc_split):
                 mtxFile.writelines(lines)
                 # re-initialize mappings dict
                 maps = dict()
+            
+            # reassign cell to current barcode
+            cell = cx
 
             # add features count to mappings dict
-            cell = cx
-            teidx = features[te]
-            if ux not in maps:
-                # initialize UMI if not in mappings dict
-                maps[ux] = dict()
-            if teidx in maps[ux]:
-                # initialize feature count for UMI
-                maps[ux][teidx]+=1
-            else:
-                # add count to existing feature in UMI
-                maps[ux][teidx]=1
+            if cx in barcodes:
+                teidx = features[te]
+                if ux not in maps:
+                    # initialize UMI if not in mappings dict
+                    maps[ux] = dict()
+                if teidx in maps[ux]:
+                    # initialize feature count for UMI
+                    maps[ux][teidx]+=1
+                else:
+                    # add count to existing feature in UMI
+                    maps[ux][teidx]=1
 
             # if end of file is reached, compute counts from current cell's mappings
-            if line[0] == nlines:
+            if line[0] == nlines and cell in barcodes:
                 cellidx = barcodes.pop(cell)
                 writerr(f'[{chunkn}] [file_end] Computing counts for cell barcode {cellidx} ({cell})', verbose)
                 # compute final counts of the cell
