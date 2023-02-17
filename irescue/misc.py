@@ -28,6 +28,19 @@ def check_path(cmdname):
 def versiontuple(v):
     return tuple(map(int, v.split('.')))
 
+def check_requirement(cmd, required_version, parser, verbose):
+    if not check_path(cmd):
+        sys.exit(f"ERROR: Couldn't find {cmd} in PATH. Please install {cmd} >={required_version} and try again.")
+    else:
+        try:
+            version = parser()
+            if version < versiontuple(required_version):
+                writerr(f"WARNING: Found {cmd} version {version}. Versions prior {required_version} are not supported.")
+            else:
+                writerr(f"Found {cmd} version {version}. Proceeding.", verbose)
+        except:
+            writerr(f"WARNING: Found {cmd} but couldn't parse its version. NB: {cmd} versions prior {required_version} are not supported.")
+
 # Small function to write a message to stderr with timestamp
 def writerr(msg, send=True):
     if send:

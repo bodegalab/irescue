@@ -2,7 +2,7 @@
 
 from irescue._version import __version__
 from irescue._genomes import __genomes__
-from irescue.misc import writerr, check_path, versiontuple, run_shell_cmd
+from irescue.misc import writerr, check_requirement, versiontuple, run_shell_cmd
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat, checkIndex
 from irescue.count import split_bc, parse_features, count, formatMM
 import argparse, os, sys
@@ -49,31 +49,8 @@ def main():
     writerr('IRescue job starts')
 
     # Check requirements
-    bedtools_required = '2.30.0'
-    if not check_path('bedtools'):
-        sys.exit(f"ERROR: Couldn't find bedtools in PATH. Please install bedtools >={bedtools_required} and try again.")
-    else:
-        try:
-            bedtools_version = versiontuple(run_shell_cmd('bedtools --version').split()[1][1:])
-        except:
-            writerr(f"WARNING: Found bedtools by couldn't parse its version. NB: bedtools versions prior {bedtools_required} are not supported.")
-        if bedtools_version < versiontuple(bedtools_required):
-            writerr(f"WARNING: Found bedtools version {bedtools_version}. Versions prior {bedtools_required} are not supported.")
-        else:
-            writerr(f"Found bedtools version {bedtools_version}. Proceeding.", args.verbose)
-
-    samtools_required = '1.11'
-    if not check_path('samtools'):
-        sys.exit(f"ERROR: Couldn't find samtools in PATH. Please install samtools >={samtools_required} and try again.")
-    else:
-        try:
-            samtools_version = versiontuple(run_shell_cmd('samtools --version').split()[1])
-        except:
-            writerr(f"WARNING: Found samtools but couldn't parse its version. NB: samtools versions prior {samtools_required} are not supported.")
-        if samtools_version < versiontuple(samtools_required):
-            writerr(f"WARNING: samtools versions prior {samtools_required} are not supported.")
-        else:
-            writerr(f"Found samtools version {samtools_version}. Proceeding.", args.verbose)
+    check_requirement('bedtools', '2.30.0', lambda: versiontuple(run_shell_cmd('bedtools --version').split()[1][1:]), args.verbose)
+    check_requirement('samtools', '1.11', lambda: versiontuple(run_shell_cmd('samtools --version').split()[1]), args.verbose)
 
     # create directories (TODO: make function to take care of all dirs)
     os.makedirs(args.tmpdir, exist_ok=True)
