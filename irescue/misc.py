@@ -2,12 +2,13 @@
 
 import subprocess
 import os
-from datetime import datetime
 import sys
 import gzip
+from datetime import datetime
+from shutil import which
 
+# Execute a command with subprocess
 def run_shell_cmd(cmd):
-    '''Wrapper function to execute subprocesses'''
     p = subprocess.Popen(
         ['/bin/bash', '-o', 'pipefail'],
         stdin=subprocess.PIPE,
@@ -21,21 +22,24 @@ def run_shell_cmd(cmd):
     stdout, stdin = p.communicate(cmd)
     return stdout.strip('\n')
 
-def time():
-    '''Small function to write out the current date and time'''
-    return datetime.now().strftime("%m/%d/%Y - %H:%M:%S")
+def check_path(cmdname):
+    return which(cmdname) is not None
+
+def versiontuple(v):
+    return tuple(map(int, v.split('.')))
 
 # Small function to write a message to stderr with timestamp
 def writerr(msg, send=True):
     if send:
-        message = f'[{time()}] '
+        timelog = datetime.now().strftime("%m/%d/%Y - %H:%M:%S")
+        message = f'[{timelog}] '
         if not msg[-1]=='\n':
             msg += '\n'
         message += msg
         sys.stderr.write(message)
 
+# Test if file is gzip
 def testGz(input_file):
-    '''Test if file is gzip'''
     with gzip.open(input_file, 'rb') as f:
         try:
             f.read(1)
@@ -43,8 +47,8 @@ def testGz(input_file):
         except gzip.BadGzipFile:
             return False
 
+# Uncompress gzipped file
 def unGzip(input_file, output_file):
-    '''Decompress gzip files'''
     with gzip.open(input_file, 'rb') as fin,\
     open(output_file, 'w') as fout:
         for line in fin:
@@ -63,5 +67,4 @@ def getlen(file):
 
 # Flatten a list of sublists
 def flatten(x):
-    '''Flattens a list of sublists'''
     return [item for sublist in x for item in sublist]
