@@ -72,11 +72,12 @@ def main():
     # decompress whitelist if compressed
     whitelist = prepare_whitelist(args.whitelist, args.tmpdir)
 
-    # allocate threads
+    # Allocate threads
     if args.threads > 1:
         pool = Pool(args.threads)
 
-    # execute intersection between reads and TE coordinates
+    # Execute intersection between reads and TE coordinates
+    writerr(f"Computing overlap between reads and TEs coordinates in the following references: {', '.join(chrNames)}", args.verbose)
     isecFun = partial(
         isec, args.bam, regions, whitelist, args.CBtag, args.UMItag,
         args.tmpdir, args.samtools, args.bedtools, args.verbose

@@ -108,9 +108,19 @@ def getRefs(bamFile, bedFile):
                 bedChrNames.add(line.split('\t')[0])
     skipChr = [x for x in chrNames if x not in bedChrNames]
     if skipChr:
-        writerr('WARNING: The following references are not present in the TE annotation and will be skipped: ' + ', '.join(skipChr))
+        writerr('WARNING: The following references contain read alignments but are not found in the TE annotation and will be skipped: ' + ', '.join(skipChr))
         chrNames = [x for x in chrNames if x in bedChrNames]
-    return chrNames
+    if chrNames:
+        return chrNames
+    else:
+        sys.exit(
+            """
+            ERROR: Reference names not matching between BAM and TE annotation.
+            If your BAM follows the ENSEMBL nomenclature (i.e. 1, 2, etc...),
+            you can either change it to UCSC (chr1, chr2, etc...), or use a
+            custom TE annotation with ENSEMBL chromosome names.
+            """
+        )
 
 # Intersect reads with repeatmasker regions. Return the intersection file path.
 def isec(bamFile, bedFile, whitelist, CBtag, UMItag, tmpdir, samtools, bedtools, verbose, chrom):
