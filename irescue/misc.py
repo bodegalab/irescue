@@ -6,6 +6,7 @@ import sys
 import gzip
 from datetime import datetime
 from shutil import which
+import pysam
 
 # Execute a command with subprocess
 def run_shell_cmd(cmd):
@@ -81,3 +82,38 @@ def getlen(file):
 # Flatten a list of sublists
 def flatten(x):
     return [item for sublist in x for item in sublist]
+
+# Check if bam contains barcode and umi tags
+def check_tags(bamFile, CBtag, UMItag, nLines=False, exit_with_error=True, verbose=False):
+    with pysam.AlignmentFile(bamFile, 'rb') as f:
+        c = 1
+        writerr(f"Testing bam file for {CBtag} and {UMItag} tags presence. Will stop at the first occurrence.", verbose)
+        for read in f:
+            if nLines and c >= nLines:
+                break
+            elif c % 1000000 == 0:
+                writerr(f"WARNING: Couldn't find {CBtag} and {UMItag} tags in the first {c} records. Did you select the right tags? Continuing parsing bam...")
+            try:
+                read.get_tag(CBtag) and read.get_tag(UMItag)
+                writerr(f"Found {CBtag} and {UMItag} tags occurrence in bam's line {c}.")
+                return(True)
+            except:
+                c += 1
+                pass
+    if exit_with_error:
+        sys.exit(
+            """
+            ERROR: Couldn't find {} and {} tags in {}the bam file.
+            Check you bam file for the presence of tags for cell barcode
+            and UMI sequences, then provide them to IRescue through
+            --CBtag and --UMItag flags.
+            If you expect few alignments to contain the tags, you can
+            suppress this check with --no-tags-check
+            """.format(
+                CBtag,
+                UMItag,
+                f'the first {nLines} lines of ' if nLines else ''
+            )
+        )
+    else:
+        return(False)
