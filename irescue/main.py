@@ -56,7 +56,7 @@ def main():
     # Check if the selected cell barcode and UMI tags are present in bam file.
     if not args.no_tags_check:
         check_tags(bamFile=args.bam, CBtag=args.CBtag, UMItag=args.UMItag,
-                nLines=999999, exit_with_error=True, verbose=args.verbose)
+                   nLines=999999, exit_with_error=True, verbose=args.verbose)
 
     # Check for bam index file. If not present, will build an index.
     checkIndex(args.bam, verbose=args.verbose)
