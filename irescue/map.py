@@ -144,16 +144,16 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, tmpdir, samtools, bedtools,
     # split bed file by chromosome
     sort = 'LC_ALL=C sort -k1,1 -k2,2n --buffer-size=1G'
     if bedFile[-3:] == '.gz':
-        cmd0 = f'zcat {bedFile} | awk \'$1=="{chrom}"\' | {sort} | gzip > {refFile}'
+        cmd0 = f'zcat {bedFile} | gawk \'$1=="{chrom}"\' | {sort} | gzip > {refFile}'
     else:
-        cmd0 = f'awk \'$1=="{chrom}"\' {bedFile} | {sort} | gzip > {refFile}'
+        cmd0 = f'gawk \'$1=="{chrom}"\' {bedFile} | {sort} | gzip > {refFile}'
 
     # command streaming alignments for intersection
     if whitelist:
         stream = f' <({samtools} view -h {bamFile} -D {CBtag}:{whitelist} {chrom} | '
     else:
         stream = f' <({samtools} view -h {bamFile} {chrom} | '
-    stream += ' awk \'!($1~/^@/) { split("", tags); '
+    stream += ' gawk \'!($1~/^@/) { split("", tags); '
     stream += ' for (i=12;i<=NF;i++) {split($i,tag,":"); tags[tag[1]]=tag[3]}; '
     # Discard records without CB tag, unvalid STARSolo CBs, missing UMI tag and homopolymer UMIs
     stream += f' if(tags["{CBtag}"]~/^(|-)$/ || tags["{UMItag}"]~/^$|^(A+|G+|T+|C+|N+)$/) {{next}}; '
@@ -168,7 +168,7 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, tmpdir, samtools, bedtools,
     cmd = f'{bedtools} intersect -a {stream} -b {refFile} -split -bed -wo -sorted | '
     # remove mate information from read name and
     # concatenate CB and UMI with feature name
-    cmd += ' awk \'{ sub(/\/[12]$/,"",$4); n=split($4,qname,/\//); $4=qname[n-1]"\\t"qname[n]"\\t"$16 } '
+    cmd += ' gawk \'{ sub(/\/[12]$/,"",$4); n=split($4,qname,/\//); $4=qname[n-1]"\\t"qname[n]"\\t"$16 } '
     #cmd += ' !x[$4]++ {OFS="\\t"; print $4}\' | '
     cmd += ' {OFS="\\t"; print $4}\' | '
     cmd += f' gzip > {isecFile}'
@@ -193,7 +193,7 @@ def chrcat(filesList, threads, outdir, tmpdir, verbose):
     cmd0 += f' | gzip > {mappings_file} '
     cmd1 = f'zcat {mappings_file} | cut -f1 | uniq | gzip > {barcodes_file} '
     cmd2 = f'zcat {mappings_file} '
-    cmd2 += ' | awk \'!x[$3]++ { '
+    cmd2 += ' | gawk \'!x[$3]++ { '
     cmd2 += ' split($3,a,"~"); '
     # avoid subfamilies with the same name
     cmd2 += ' if(a[1] in sf) { sf[a[1]]+=1 } else { sf[a[1]] }; '
