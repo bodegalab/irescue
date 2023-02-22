@@ -145,7 +145,7 @@ def count(mappings_file, outdir, tmpdir, features, intcount, verbose, bc_split):
 
     # parse barcodes in a SEQUENCE:INDEX dictionary
     barcodes = dict(bc_split[1])
-    writerr(f'Processing {len(barcodes)} barcodes from chunk {chunkn}', verbose)
+    writerr(f'Processing {len(barcodes)} barcodes from chunk {chunkn}', send=verbose)
 
     # get number of lines in mappings_file
     nlines = getlen(mappings_file)
@@ -179,7 +179,7 @@ def count(mappings_file, outdir, tmpdir, features, intcount, verbose, bc_split):
             # if cell barcode changes, compute counts from previous cell's mappings
             if cx != cell and cell in barcodes:
                 cellidx = barcodes.pop(cell)
-                writerr(f'[{chunkn}] Computing counts for cell barcode {cellidx} ({cell})', verbose)
+                writerr(f'[{chunkn}] Computing counts for cell barcode {cellidx} ({cell})', send=verbose)
                 # compute final counts of the cell
                 counts = cellCount(maps, intcount=intcount)
                 # arrange counts in a data frame and write to text file
@@ -208,7 +208,7 @@ def count(mappings_file, outdir, tmpdir, features, intcount, verbose, bc_split):
             # if end of file is reached, compute counts from current cell's mappings
             if line[0] == nlines and cell in barcodes:
                 cellidx = barcodes.pop(cell)
-                writerr(f'[{chunkn}] [file_end] Computing counts for cell barcode {cellidx} ({cell})', verbose)
+                writerr(f'[{chunkn}] [file_end] Computing counts for cell barcode {cellidx} ({cell})', send=verbose)
                 # compute final counts of the cell
                 counts = cellCount(maps, intcount=intcount)
                 # arrange counts in a data frame and write to text file
@@ -216,7 +216,7 @@ def count(mappings_file, outdir, tmpdir, features, intcount, verbose, bc_split):
                         for k, v in counts.items() ]
                 mtxFile.writelines(lines)
 
-    writerr(f'Barcodes chunk {chunkn} written to {matrix_file}', verbose)
+    writerr(f'Barcodes chunk {chunkn} written to {matrix_file}', send=verbose)
     return matrix_file
 
 # Concatenate matrices in a single MatrixMarket file with proper header
