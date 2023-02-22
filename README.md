@@ -1,7 +1,7 @@
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodegalab/irescue/python-publish.yml?logo=github&label=build)
 [![PyPI](https://img.shields.io/pypi/v/irescue?logo=python)](https://pypi.org/project/irescue/)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat&logo=anaconda)](https://bioconda.github.io/recipes/irescue/README.html)
-[![container](https://img.shields.io/badge/dynamic/json?url=https://quay.io/api/v1/repository/biocontainers/irescue/tag/&label=container&query=$.tags.0.name&prefix=quay.io/biocontainers/irescue:)](https://quay.io/repository/biocontainers/irescue?tab=tags)
+[![container](https://img.shields.io/badge/dynamic/json?url=https://quay.io/api/v1/repository/biocontainers/irescue/tag/&label=container&query=$.tags.0.name&prefix=quay.io/biocontainers/irescue:&logo=docker)](https://quay.io/repository/biocontainers/irescue?tab=tags)
 [![Paper](https://img.shields.io/badge/DOI-10.1101%2F2022.09.16.508229-9cf)](https://doi.org/10.1101/2022.09.16.508229)
 
 # IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
