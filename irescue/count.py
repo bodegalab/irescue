@@ -54,21 +54,28 @@ def cellCount(maps, intcount = False):
         umis = rsmaps[ec]
         ### compute the total count of the equivalence class
         if len(umis) > 1:
-            ### find and collapse duplicated UMIs ###
-            # make an array of pair-wise mismatches between UMIs
+            ### Find and collapse duplicated UMIs ###
+            # Make an NxN array of number of mismatches between N UMIs
             mm_arr = np.array([[find_mm(ux,i) for i in umis] for ux in umis])
-            # find pairs with up to 1 mismatch
+            # Find UMI pairs with up to 1 mismatch, where UMIs are representad
+            # by integers: [[i, j], [i, k], [k, m]]
             mm_check = np.argwhere(mm_arr <= 1)
-            # make a graph that connects UMIs with <=1 mismatches
+            # Make a graph that connects UMIs with <=1 mismatches
+            # {NODE: EDGES} or {UMI: [CONNECTED_UMIS]}
             graph = dict()
             for key, value in mm_check:
                 graph.setdefault(key, set()).add(value)
-            # collapse networks based on UMI similarity
-            coll_nets = collapse_networks(graph)
-            # get EC total count after collapsing
-            ec_count = len(coll_nets)
+            # Check if all nodes are connected (i.e. complete graph)
+            if all([x == set(graph.keys()) for x in graph.values()]):
+                # Set EC final count to 1
+                ec_count = 1
+            else:            
+                # Collapse networks based on UMI similarity: {HUB: [UMI_GRAPHS]}
+                coll_nets = collapse_networks(graph)
+                # Get EC final count after collapsing
+                ec_count = len(coll_nets)
         else:
-            # if only one umi, skip collapsing and assign 1 to the total count
+            # If only one umi, skip collapsing and assign 1 to the final count
             ec_count = 1
 
         ### find the predominant TE family in the equivalence class

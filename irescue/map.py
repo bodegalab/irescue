@@ -153,11 +153,11 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, tmpdir, samtools, bedtools,
         stream = f' <({samtools} view -h {bamFile} -D {CBtag}:{whitelist} {chrom} | '
     else:
         stream = f' <({samtools} view -h {bamFile} {chrom} | '
-    stream += ' awk \'!($1~/^@/) {'
+    stream += ' awk \'!($1~/^@/) { split("", tags); '
     stream += ' for (i=12;i<=NF;i++) {split($i,tag,":"); tags[tag[1]]=tag[3]}; '
-    # discard unvalid STARSolo CBs and homopolymer UMIs
-    stream += f' if(tags["{CBtag}"]=="-" || tags["{UMItag}"]~/^(A+|G+|T+|C+|N+)$/) {{next}}; '
-    # append CB and UMI to read name
+    # Discard records without CB tag, unvalid STARSolo CBs, missing UMI tag and homopolymer UMIs
+    stream += f' if(tags["{CBtag}"]~/^(|-)$/ || tags["{UMItag}"]~/^$|^(A+|G+|T+|C+|N+)$/) {{next}}; '
+    # Append CB and UMI to read name
     stream += f' $1=$1"/"tags["{CBtag}"]"/"tags["{UMItag}"]; '
     stream += ' } '
     stream += ' { OFS="\\t"; print }\' | '
