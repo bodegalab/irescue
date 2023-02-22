@@ -17,12 +17,12 @@ def checkIndex(bamFile, verbose):
             try:
                 index(bamFile)
             except:
-                sys.exit(f'Couldn\'t index the BAM file. Please do so manually with `samtools index {bamFile}`.')
+                writerr(f'Couldn\'t index the BAM file. Please do so manually with `samtools index {bamFile}`.', error=True)
             else:
                 writerr('BAM indexing done.')
         else:
             if verbose:
-                writerr(f'Found index for BAM file {bamFile}', verbose)
+                writerr(f'Found index for BAM file {bamFile}', send=verbose)
 
 
 # Check repeatmasker regions bed file format. Download if not provided.
@@ -42,14 +42,22 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
             line = rl(f)
         # check for minimum column number
         if len(line.strip().split('\t')) < 4:
-            sys.exit('Error: please provide a tab-separated BED file with at least 4 columns and TE feature name (e.g. subfamily) in 4th column.')
+            writerr('Error: please provide a tab-separated BED file with at least 4 columns and TE feature name (e.g. subfamily) in 4th column.', error=True)
         f.close()
         out = regions
     # if no repeatmasker file is provided, and a genome assembly name is provided, download and prepare a rmsk.bed file
     elif genome:
+        if not genome in genomes:
+            writerr(
+                f"ERROR: Genome assembly name shouldbe one of: {', '.join(genomes.keys())}",
+                error=True
+            )
         url, header_lines = genomes[genome]
-        writerr(f'Downloading and parsing RepeatMasker annotation for assembly {genome} from {url}...')
-        response = requests.get(url)
+        writerr(f'Downloading and parsing RepeatMasker annotation for assembly {genome} from {url} ...')
+        try:
+            response = requests.get(url, stream=True, timeout=60)
+        except:
+            writerr("ERROR: Download of RepeatMasker annotation failed. Couldn't connect to host.", error=True)
         rmsk = gzopen(io.BytesIO(response.content), 'rb')
         out = tmpdir + '/' + outname
         with open(out, 'w') as f:
@@ -79,7 +87,7 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
                 outl += '\n'
                 f.write(outl)
     else:
-        sys.exit('Error: it is mandatory to define either --regions OR --genome paramter.')
+        writerr('Error: it is mandatory to define either --regions OR --genome paramter.', error=True)
     return(out)
 
 # Uncompress the whitelist file if compressed.
@@ -113,13 +121,14 @@ def getRefs(bamFile, bedFile):
     if chrNames:
         return chrNames
     else:
-        sys.exit(
+        writerr(
             """
             ERROR: Reference names not matching between BAM and TE annotation.
             If your BAM follows the ENSEMBL nomenclature (i.e. 1, 2, etc...),
             you can either change it to UCSC (chr1, chr2, etc...), or use a
             custom TE annotation with ENSEMBL chromosome names.
-            """
+            """,
+            error=True
         )
 
 # Intersect reads with repeatmasker regions. Return the intersection file path.
@@ -164,11 +173,11 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, tmpdir, samtools, bedtools,
     cmd += ' {OFS="\\t"; print $4}\' | '
     cmd += f' gzip > {isecFile}'
 
-    writerr(f'Extracting {chrom} reference', verbose)
+    writerr(f'Extracting {chrom} reference', send=verbose)
     run_shell_cmd(cmd0)
-    writerr(f'Intersecting alignments with {chrom} reference', verbose)
+    writerr(f'Intersecting alignments with {chrom} reference', send=verbose)
     run_shell_cmd(cmd)
-    writerr(f'Finished mapping {chrom}', verbose)
+    writerr(f'Finished mapping {chrom}', send=verbose)
 
     return isecFile
 
@@ -193,7 +202,7 @@ def chrcat(filesList, threads, outdir, tmpdir, verbose):
     cmd2 += ' }\' '
     cmd2 += f' | LC_ALL=C sort -u | gzip > {features_file} '
 
-    writerr('Concatenating mappings', verbose)
+    writerr('Concatenating mappings', send=verbose)
     run_shell_cmd(cmd0)
     writerr(f'Writing mapped barcodes to {barcodes_file}')
     run_shell_cmd(cmd1)

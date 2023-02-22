@@ -26,7 +26,7 @@ a tool for quantifying tansposable elements expression in scRNA-seq.
     )
     parser.add_argument('-b','--bam', required=True, help='scRNA-seq reads aligned to a reference genome')
     parser.add_argument('-r', '--regions', default=False, help='Genomic TE coordinates in bed format. Takes priority over --genome paramter (default: False).')
-    parser.add_argument('-g', '--genome', default=False, help='Genome assembly symbol. One of: {} (default: False)'.format(','.join(__genomes__.keys())))
+    parser.add_argument('-g', '--genome', default=False, help='Genome assembly symbol. One of: {} (default: False)'.format(', '.join(__genomes__.keys())))
     parser.add_argument('-p','--threads', type=int, default=1, help='Number of cpus to use (default: 1)')
     parser.add_argument('-w','--whitelist', default=False, help='Text file of filtered cell barcodes, e.g. by Cell Ranger, STARSolo or your gene expression quantifier of choice (Recommended. Default: False)')
     parser.add_argument('--CBtag', type=str, default='CB', help='BAM tag containing the cell barcode sequence (default: CB)')
@@ -81,7 +81,7 @@ def main():
         pool = Pool(args.threads)
 
     # Execute intersection between reads and TE coordinates
-    writerr(f"Computing overlap between reads and TEs coordinates in the following references: {', '.join(chrNames)}", args.verbose)
+    writerr(f"Computing overlap between reads and TEs coordinates in the following references: {', '.join(chrNames)}", send=args.verbose)
     isecFun = partial(
         isec, args.bam, regions, whitelist, args.CBtag, args.UMItag,
         args.tmpdir, args.samtools, args.bedtools, args.verbose
@@ -125,7 +125,7 @@ def main():
     writerr(f'Writing sparse matrix to {matrix_file}')
 
     if not args.keeptmp:
-        writerr(f'Cleaning up temporary files.', args.verbose)
+        writerr(f'Cleaning up temporary files.', send=args.verbose)
         rmtree(args.tmpdir)
 
     writerr('Done.')

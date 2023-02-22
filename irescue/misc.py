@@ -31,26 +31,29 @@ def versiontuple(v):
 
 def check_requirement(cmd, required_version, parser, verbose):
     if not check_path(cmd):
-        sys.exit(f"ERROR: Couldn't find {cmd} in PATH. Please install {cmd} >={required_version} and try again.")
+        writerr(f"ERROR: Couldn't find {cmd} in PATH. Please install {cmd} >={required_version} and try again.", error=True)
     else:
         try:
             version = parser()
             if version < versiontuple(required_version):
                 writerr(f"WARNING: Found {cmd} version {version}. Versions prior {required_version} are not supported.")
             else:
-                writerr(f"Found {cmd} version {version}. Proceeding.", verbose)
+                writerr(f"Found {cmd} version {version}. Proceeding.", send=verbose)
         except:
             writerr(f"WARNING: Found {cmd} but couldn't parse its version. NB: {cmd} versions prior {required_version} are not supported.")
 
 # Small function to write a message to stderr with timestamp
-def writerr(msg, send=True):
+def writerr(msg, error=False, send=True):
     if send:
         timelog = datetime.now().strftime("%m/%d/%Y - %H:%M:%S")
         message = f'[{timelog}] '
         if not msg[-1]=='\n':
             msg += '\n'
         message += msg
-        sys.stderr.write(message)
+        if error:
+            sys.exit(message)
+        else:
+            sys.stderr.write(message)
 
 # Test if file is gzip
 def testGz(input_file):
@@ -87,7 +90,7 @@ def flatten(x):
 def check_tags(bamFile, CBtag, UMItag, nLines=False, exit_with_error=True, verbose=False):
     with pysam.AlignmentFile(bamFile, 'rb') as f:
         c = 1
-        writerr(f"Testing bam file for {CBtag} and {UMItag} tags presence. Will stop at the first occurrence.", verbose)
+        writerr(f"Testing bam file for {CBtag} and {UMItag} tags presence. Will stop at the first occurrence.", send=verbose)
         for read in f:
             if nLines and c >= nLines:
                 break
@@ -101,7 +104,7 @@ def check_tags(bamFile, CBtag, UMItag, nLines=False, exit_with_error=True, verbo
                 c += 1
                 pass
     if exit_with_error:
-        sys.exit(
+        writerr(
             """
             ERROR: Couldn't find {} and {} tags in {}the bam file.
             Check you bam file for the presence of tags for cell barcode
@@ -113,7 +116,8 @@ def check_tags(bamFile, CBtag, UMItag, nLines=False, exit_with_error=True, verbo
                 CBtag,
                 UMItag,
                 f'the first {nLines} lines of ' if nLines else ''
-            )
+            ),
+            error=True
         )
     else:
         return(False)
