@@ -131,11 +131,14 @@ def cellCount(maps, intcount=False, dumpec=False):
         if dumpec:
             if umis == umis_dedup:
                 umis_dedup = ['-']
+                raw_count = '-'
+            else:
+                raw_count = len(umis)
             ec_log.append('\t'.join([
                 str(ec),                # EC index
                 ','.join(eclist[ec]),   # EC name
                 ','.join(umis),         # Raw UMIs
-                str(len(umis)),         # Raw count
+                str(raw_count),         # Raw count
                 ','.join(umis_dedup),   # Deduplicated UMIs
                 str(ec_count),          # Deduplicated count
                 ','.join(te_max)        # Filtered TEs
@@ -301,9 +304,9 @@ def writeEC(ecdump_files, outdir):
         'Dedup_UMIs',
         'Dedup_count',
         'Filtered_TE'
-    ]) + '\n'
+    ])
     with open(ecdump_out, 'w') as f:
-        f.write(header + '\t')
+        f.write(header)
     cmd = f'cat {ecdumpstr} | LC_ALL=C sort -k1,1n -k2 >> {ecdump_out}'
     run_shell_cmd(cmd)
     return ecdump_out
