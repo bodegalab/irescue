@@ -309,7 +309,7 @@ def writeEC(ecdump_files, outdir):
         'Corrected_UMIs',
         'Filtered_TE',
         'TE_counts'
-    ])
+    ]) + '\n'
     with open(ecdump_out, 'w') as f:
         f.write(header + '\t')
     cmd = f'cat {ecdumpstr} | LC_ALL=C sort -k1,1n -k2 >> {ecdump_out}'
