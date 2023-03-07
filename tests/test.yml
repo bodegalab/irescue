@@ -1,4 +1,7 @@
 - name: irescue genome
+  tags:
+    - genome
+    - single
   command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -g test --keeptmp --dumpEC --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
@@ -8,9 +11,12 @@
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 04ddbd538c796f019f37d3048b159a2f
     - path: "IRescue_out/ec_dump.tsv"
-      md5sum: 4d00653350a5aa51cec4710b16e98aec
+      md5sum: eae2292b07883e700620eafd20820358
 
 - name: irescue genome multiprocessing
+  tags:
+    - genome
+    - multi
   command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -g test -p 2 --keeptmp --dumpEC --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
@@ -20,9 +26,12 @@
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 04ddbd538c796f019f37d3048b159a2f
     - path: "IRescue_out/ec_dump.tsv"
-      md5sum: 4d00653350a5aa51cec4710b16e98aec
+      md5sum: eae2292b07883e700620eafd20820358
 
 - name: irescue coords
+  tags:
+    - coords
+    - single
   command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --keeptmp --dumpEC --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
@@ -32,9 +41,12 @@
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 04ddbd538c796f019f37d3048b159a2f
     - path: "IRescue_out/ec_dump.tsv"
-      md5sum: 4d00653350a5aa51cec4710b16e98aec
+      md5sum: eae2292b07883e700620eafd20820358
 
 - name: irescue coords multiprocessing
+  tags:
+    - coords
+    - multi
   command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -p 2 --keeptmp --dumpEC --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
@@ -44,10 +56,14 @@
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 04ddbd538c796f019f37d3048b159a2f
     - path: "IRescue_out/ec_dump.tsv"
-      md5sum: 4d00653350a5aa51cec4710b16e98aec
+      md5sum: eae2292b07883e700620eafd20820358
 
 
 - name: irescue whitelist genome
+  tags:
+    - genome
+    - single
+    - whitelist
   command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -g test -w ./tests/data/whitelist.txt --keeptmp --dumpEC --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
@@ -57,9 +73,13 @@
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 85c61d1df6ccadf83eafc6bc36a21c89
     - path: "IRescue_out/ec_dump.tsv"
-      md5sum: a3f4ac0e6ad8ffee95845aa23dff398e
+      md5sum: 70090e842d074fdf507deb56581238aa
 
 - name: irescue whitelist genome multiprocessing
+  tags:
+    - genome
+    - multi
+    - whitelist
   command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -g test -p 2 -w ./tests/data/whitelist.txt --keeptmp --dumpEC --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
@@ -69,9 +89,13 @@
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 85c61d1df6ccadf83eafc6bc36a21c89
     - path: "IRescue_out/ec_dump.tsv"
-      md5sum: a3f4ac0e6ad8ffee95845aa23dff398e
+      md5sum: 70090e842d074fdf507deb56581238aa
 
 - name: irescue whitelist coords
+  tags:
+    - coords
+    - single
+    - whitelist
   command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -w ./tests/data/whitelist.txt --keeptmp --dumpEC --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
@@ -81,9 +105,13 @@
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 85c61d1df6ccadf83eafc6bc36a21c89
     - path: "IRescue_out/ec_dump.tsv"
-      md5sum: a3f4ac0e6ad8ffee95845aa23dff398e
+      md5sum: 70090e842d074fdf507deb56581238aa
 
 - name: irescue whitelist coords multiprocessing
+  tags:
+    - coords
+    - multi
+    - whitelist
   command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -w ./tests/data/whitelist.txt --keeptmp --dumpEC -p 2 --verbose
   files:
     - path: "IRescue_out/barcodes.tsv.gz"
@@ -93,4 +121,4 @@
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 85c61d1df6ccadf83eafc6bc36a21c89
     - path: "IRescue_out/ec_dump.tsv"
-      md5sum: a3f4ac0e6ad8ffee95845aa23dff398e
+      md5sum: 70090e842d074fdf507deb56581238aa
