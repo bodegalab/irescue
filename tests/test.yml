@@ -10,8 +10,8 @@
       md5sum: e8bf21611afd1f40d722ed985f4e3392
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 04ddbd538c796f019f37d3048b159a2f
-    - path: "IRescue_out/ec_dump.tsv"
-      md5sum: eae2292b07883e700620eafd20820358
+    - path: "IRescue_out/ec_dump.tsv.gz"
+      md5sum: 2fbcb954fb48065c6b67a84001b6bc34
 
 - name: irescue genome multiprocessing
   tags:
@@ -25,8 +25,8 @@
       md5sum: e8bf21611afd1f40d722ed985f4e3392
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 04ddbd538c796f019f37d3048b159a2f
-    - path: "IRescue_out/ec_dump.tsv"
-      md5sum: eae2292b07883e700620eafd20820358
+    - path: "IRescue_out/ec_dump.tsv.gz"
+      md5sum: 2fbcb954fb48065c6b67a84001b6bc34
 
 - name: irescue coords
   tags:
@@ -40,8 +40,8 @@
       md5sum: e8bf21611afd1f40d722ed985f4e3392
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 04ddbd538c796f019f37d3048b159a2f
-    - path: "IRescue_out/ec_dump.tsv"
-      md5sum: eae2292b07883e700620eafd20820358
+    - path: "IRescue_out/ec_dump.tsv.gz"
+      md5sum: 2fbcb954fb48065c6b67a84001b6bc34
 
 - name: irescue coords multiprocessing
   tags:
@@ -55,8 +55,8 @@
       md5sum: e8bf21611afd1f40d722ed985f4e3392
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 04ddbd538c796f019f37d3048b159a2f
-    - path: "IRescue_out/ec_dump.tsv"
-      md5sum: eae2292b07883e700620eafd20820358
+    - path: "IRescue_out/ec_dump.tsv.gz"
+      md5sum: 2fbcb954fb48065c6b67a84001b6bc34
 
 
 - name: irescue whitelist genome
@@ -72,8 +72,8 @@
       md5sum: 2dcec6f4aead5faba9c1af44b0129b55
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 85c61d1df6ccadf83eafc6bc36a21c89
-    - path: "IRescue_out/ec_dump.tsv"
-      md5sum: 70090e842d074fdf507deb56581238aa
+    - path: "IRescue_out/ec_dump.tsv.gz"
+      md5sum: 55cadf011fdbf8fbd166e3149549a197
 
 - name: irescue whitelist genome multiprocessing
   tags:
@@ -88,8 +88,8 @@
       md5sum: 2dcec6f4aead5faba9c1af44b0129b55
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 85c61d1df6ccadf83eafc6bc36a21c89
-    - path: "IRescue_out/ec_dump.tsv"
-      md5sum: 70090e842d074fdf507deb56581238aa
+    - path: "IRescue_out/ec_dump.tsv.gz"
+      md5sum: 55cadf011fdbf8fbd166e3149549a197
 
 - name: irescue whitelist coords
   tags:
@@ -104,8 +104,8 @@
       md5sum: 2dcec6f4aead5faba9c1af44b0129b55
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 85c61d1df6ccadf83eafc6bc36a21c89
-    - path: "IRescue_out/ec_dump.tsv"
-      md5sum: 70090e842d074fdf507deb56581238aa
+    - path: "IRescue_out/ec_dump.tsv.gz"
+      md5sum: 55cadf011fdbf8fbd166e3149549a197
 
 - name: irescue whitelist coords multiprocessing
   tags:
@@ -120,5 +120,5 @@
       md5sum: 2dcec6f4aead5faba9c1af44b0129b55
     - path: "IRescue_out/matrix.mtx.gz"
       md5sum: 85c61d1df6ccadf83eafc6bc36a21c89
-    - path: "IRescue_out/ec_dump.tsv"
-      md5sum: 70090e842d074fdf507deb56581238aa
+    - path: "IRescue_out/ec_dump.tsv.gz"
+      md5sum: 55cadf011fdbf8fbd166e3149549a197

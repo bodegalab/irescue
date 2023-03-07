@@ -131,14 +131,11 @@ def cellCount(maps, intcount=False, dumpec=False):
         if dumpec:
             if umis == umis_dedup:
                 umis_dedup = ['-']
-                raw_count = '-'
-            else:
-                raw_count = len(umis)
             ec_log.append('\t'.join([
                 str(ec),                # EC index
                 ','.join(eclist[ec]),   # EC name
                 ','.join(umis),         # Raw UMIs
-                str(raw_count),         # Raw count
+                str(len(umis)),         # Raw count
                 ','.join(umis_dedup),   # Deduplicated UMIs
                 str(ec_count),          # Deduplicated count
                 ','.join(te_max)        # Filtered TEs
@@ -200,8 +197,8 @@ def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc
     gzip.open(matrix_file, 'wb') as mtxFile:
         
         if dumpec:
-            ec_dump_file = tmpdir + f'/{chunkn}_ec_dump.tsv'
-            ecdump = open(ec_dump_file, 'w')
+            ec_dump_file = tmpdir + f'/{chunkn}_ec_dump.tsv.gz'
+            ecdump = gzip.open(ec_dump_file, 'wb')
 
         for line in enumerate(data, start=1):
             # gather barcode, umi and feature from mappings file
@@ -231,7 +228,7 @@ def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc
                         for k, v in counts.items() ]
                 mtxFile.writelines(lines)
                 if dumpec:
-                    ec_log = [str(cellidx) + '\t' + cell + '\t' + x for x in ec_log]
+                    ec_log = [f'{str(cellidx)}\t{cell}\t{x}'.encode() for x in ec_log]
                     ecdump.writelines(ec_log)
                 # re-initialize mappings dict
                 maps = dict()
@@ -263,7 +260,7 @@ def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc
                         for k, v in counts.items() ]
                 mtxFile.writelines(lines)
                 if dumpec:
-                    ec_log = [str(cellidx) + '\t' + cell + '\t' + x for x in ec_log]
+                    ec_log = [f'{str(cellidx)}\t{cell}\t{x}'.encode() for x in ec_log]
                     ecdump.writelines(ec_log)
         if dumpec:
             ecdump.close()
@@ -292,7 +289,7 @@ def formatMM(matrix_files, outdir, features, barcodes):
 def writeEC(ecdump_files, outdir):
     if type(ecdump_files) is str:
         ecdump_files = [ecdump_files]
-    ecdump_out = outdir + '/ec_dump.tsv'
+    ecdump_out = outdir + '/ec_dump.tsv.gz'
     ecdumpstr = ' '.join(ecdump_files)
     header = '\t'.join([
         'BC_index',
@@ -304,9 +301,9 @@ def writeEC(ecdump_files, outdir):
         'Dedup_UMIs',
         'Dedup_count',
         'Filtered_TE'
-    ])
-    with open(ecdump_out, 'w') as f:
-        f.write(header)
-    cmd = f'cat {ecdumpstr} | LC_ALL=C sort -k1,1n -k2 >> {ecdump_out}'
+    ]) + '\n'
+    with gzip.GzipFile(ecdump_out, 'wb', mtime=0) as f:
+        f.write(header.encode())
+    cmd = f'zcat {ecdumpstr} | LC_ALL=C sort -k1,1n -k2 | gzip >> {ecdump_out}'
     run_shell_cmd(cmd)
     return ecdump_out
