@@ -2,10 +2,10 @@
 
 from irescue._version import __version__
 from irescue._genomes import __genomes__
-from irescue.misc import writerr, check_requirement, versiontuple, run_shell_cmd, check_tags
+from irescue.misc import writerr, check_requirement, check_arguments, versiontuple, run_shell_cmd, check_tags
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat, checkIndex
 from irescue.count import split_bc, parse_features, count, formatMM
-import argparse, os, sys
+import argparse, os
 from multiprocessing import Pool
 from functools import partial
 from shutil import rmtree
@@ -31,6 +31,7 @@ a tool for quantifying tansposable elements expression in scRNA-seq.
     parser.add_argument('-w','--whitelist', default=False, help='Text file of filtered cell barcodes, e.g. by Cell Ranger, STARSolo or your gene expression quantifier of choice (Recommended. Default: False)')
     parser.add_argument('--CBtag', type=str, default='CB', help='BAM tag containing the cell barcode sequence (default: CB)')
     parser.add_argument('--UMItag', type=str, default='UR', help='BAM tag containing the UMI sequence (default: UR)')
+    parser.add_argument('--min-overlap', default=None, help='Minimum overlap between read and TE (Default: disabled)')
     parser.add_argument('--integers', default=False, action='store_true', help='Use if integers count are needed for downstream analysis (default: False)')
     parser.add_argument('--outdir', type=str, default='./IRescue_out/', help='Output directory name (default: IRescue_out)')
     parser.add_argument('--tmpdir', type=str, default='./IRescue_tmp/', help='Directory to store temporary files (default: IRescue_tmp)')
@@ -46,8 +47,7 @@ def main():
     
     parser = parseArguments()
     args = parser.parse_args()
-
-    writerr('IRescue job starts')
+    args = check_arguments(args)
 
     # Check requirements
     check_requirement('bedtools', '2.30.0', lambda: versiontuple(run_shell_cmd('bedtools --version').split()[1][1:]), args.verbose)
@@ -60,6 +60,8 @@ def main():
 
     # Check for bam index file. If not present, will build an index.
     checkIndex(args.bam, verbose=args.verbose)
+    
+    writerr('IRescue job starts')
     
     # create directories
     os.makedirs(args.tmpdir, exist_ok=True)
@@ -84,7 +86,7 @@ def main():
     writerr(f"Computing overlap between reads and TEs coordinates in the following references: {', '.join(chrNames)}", send=args.verbose)
     isecFun = partial(
         isec, args.bam, regions, whitelist, args.CBtag, args.UMItag,
-        args.tmpdir, args.samtools, args.bedtools, args.verbose
+        args.min_overlap, args.tmpdir, args.samtools, args.bedtools, args.verbose
     )
     if args.threads > 1:
         isecFiles = pool.map(isecFun, chrNames)
