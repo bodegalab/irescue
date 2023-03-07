@@ -50,8 +50,8 @@ def main():
     args = check_arguments(args)
 
     # Check requirements
-    check_requirement('bedtools', '2.30.0', lambda: versiontuple(run_shell_cmd('bedtools --version').split()[1][1:]), args.verbose)
-    check_requirement('samtools', '1.11', lambda: versiontuple(run_shell_cmd('samtools --version').split()[1]), args.verbose)
+    check_requirement(args.bedtools, '2.30.0', lambda: versiontuple(run_shell_cmd('bedtools --version').split()[1][1:]), args.verbose)
+    check_requirement(args.samtools, '1.11', lambda: versiontuple(run_shell_cmd('samtools --version').split()[1]), args.verbose)
 
     # Check if the selected cell barcode and UMI tags are present in bam file.
     if not args.no_tags_check:
