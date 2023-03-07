@@ -81,11 +81,11 @@ def cellCount(maps, intcount=False, dumpec=False):
                         mm = mm[0]
                     if mm:
                         iupac = iupac_nt_code(mm[1])
-                        umis_corrected = list(umis[0])
-                        umis_corrected[mm[0]] = iupac
-                        umis_corrected = [''.join(umis_corrected)]
+                        umis_dedup = list(umis[0])
+                        umis_dedup[mm[0]] = iupac
+                        umis_dedup = [''.join(umis_dedup)]
                     else:
-                        umis_corrected = [''.join(umis_corrected)]
+                        umis_dedup = [''.join(umis_dedup)]
             else:
                 # Collapse networks based on UMI similarity: {HUB: [UMI_GRAPHS]}
                 coll_nets = collapse_networks(graph)
@@ -93,12 +93,13 @@ def cellCount(maps, intcount=False, dumpec=False):
                 ec_count = len(coll_nets)
                 #
                 if dumpec:
-                    umis_corrected = [umis[x] for x in coll_nets]
+                    umis_dedup = [umis[x] for x in coll_nets]
 
         else:
             # If only one umi, skip collapsing and assign 1 to the final count
             ec_count = 1
-            umis_corrected = umis
+            if dumpec:
+                umis_dedup = umis
 
         ### find the predominant TE family in the equivalence class
         # make count matrix from mappings (row = UMI, column = TE)
@@ -128,15 +129,17 @@ def cellCount(maps, intcount=False, dumpec=False):
         
         # dump EC
         if dumpec:
+            if umis == umis_dedup:
+                umis_dedup = ['-']
             ec_log.append('\t'.join([
-                str(ec),                    # EC index
-                ','.join(eclist[ec]),       # EC name
-                ','.join(umis),             # Raw UMIs
-                ','.join(umis_corrected),   # Corrected UMIs
-                ','.join(te_max),           # Filtered TEs
-                str(norm_count)            # TE counts
+                str(ec),                # EC index
+                ','.join(eclist[ec]),   # EC name
+                ','.join(umis),         # Raw UMIs
+                str(len(umis)),         # Raw count
+                ','.join(umis_dedup),   # Deduplicated UMIs
+                str(ec_count),          # Deduplicated count
+                ','.join(te_max)        # Filtered TEs
             ]) + '\n')
-
 
     return ec_log, counts
 
@@ -196,18 +199,6 @@ def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc
         if dumpec:
             ec_dump_file = tmpdir + f'/{chunkn}_ec_dump.tsv'
             ecdump = open(ec_dump_file, 'w')
-            #ecdump.write(
-            #    '\t'.join([
-            #        'BC_index',
-            #        'Barcode',
-            #        'EC_index',
-            #        'EC_name',
-            #        'Raw_UMIs',
-            #        'Corrected_UMIs',
-            #        'Filtered_TE',
-            #        'TE_counts'
-            #    ]) + '\n'
-            #)
 
         for line in enumerate(data, start=1):
             # gather barcode, umi and feature from mappings file
@@ -306,9 +297,10 @@ def writeEC(ecdump_files, outdir):
         'EC_index',
         'EC_name',
         'Raw_UMIs',
-        'Corrected_UMIs',
-        'Filtered_TE',
-        'TE_counts'
+        'Raw_count',
+        'Dedup_UMIs',
+        'Dedup_count',
+        'Filtered_TE'
     ]) + '\n'
     with open(ecdump_out, 'w') as f:
         f.write(header + '\t')
