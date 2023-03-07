@@ -4,6 +4,7 @@ from irescue.misc import testGz
 from irescue.misc import writerr
 from irescue.misc import unGzip
 from irescue.misc import run_shell_cmd
+from irescue.misc import getlen
 from pysam import idxstats, AlignmentFile, index
 from gzip import open as gzopen
 from os import makedirs
@@ -215,8 +216,28 @@ def chrcat(filesList, threads, outdir, tmpdir, verbose):
 
     writerr('Concatenating mappings', send=verbose)
     run_shell_cmd(cmd0)
+    if getlen(mappings_file) == 0:
+        writerr(
+            f'No read-TE mappings found in {mappings_file}.'
+            ' Check annotation and temporary files to troubleshoot.',
+            error=True
+        )
     writerr(f'Writing mapped barcodes to {barcodes_file}')
     run_shell_cmd(cmd1)
+    if getlen(barcodes_file) == 0:
+        writerr(
+            f'No features written in {features_file}.'
+            ' Check BAM format and reference annotation (e.g. chr names)'
+            ' to troubleshoot.',
+            error=True
+        )
     writerr(f'Writing mapped features to {features_file}')
     run_shell_cmd(cmd2)
+    if getlen(features_file) == 0:
+        writerr(
+            f'No features written in {features_file}.'
+            ' Check annotation and temporary files to troubleshoot.',
+            error=True
+        )
+
     return mappings_file, barcodes_file, features_file
