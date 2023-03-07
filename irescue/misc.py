@@ -65,7 +65,7 @@ def check_arguments(args):
         writerr(
             'Selecting reads-TE alignments'
             f' with minimum overlap of {min_overlap}',
-            args.verbose
+            send=args.verbose
         )
         args.min_overlap = min_overlap
     return args
