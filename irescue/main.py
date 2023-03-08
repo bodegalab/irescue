@@ -13,25 +13,27 @@ from shutil import rmtree
 def parseArguments():
     parser = argparse.ArgumentParser(
         prog='IRescue',
-        usage='''
-Automatically download TE annotation:
-    irescue -b <file.bam> -g <genome_assembly> [OPTIONS]
-Provide a custom TE annotation:
-    irescue -b <file.bam> -r <repeatmasker.bed> [OPTIONS]
-''',
-        description='''IRescue (Interspersed Repeats single-cell quantifier):
-a tool for quantifying tansposable elements expression in scRNA-seq.
-''',
+        usage='irescue -b <file.bam>'
+            ' [-g <genome_assembly> | -r <repeats.bed>] [OPTIONS]',
+        description='IRescue (Interspersed Repeats single-cell quantifier):'
+            ' a tool for quantifying transposable elements expression'
+            ' in scRNA-seq.',
         epilog='Home page: https://github.com/bodegalab/irescue'
     )
-    parser.add_argument('-b','--bam', required=True, help='scRNA-seq reads aligned to a reference genome')
+    parser.add_argument('-b', '--bam', required=True, help='scRNA-seq reads aligned to a reference genome')
     parser.add_argument('-r', '--regions', default=False, help='Genomic TE coordinates in bed format. Takes priority over --genome paramter (default: False).')
     parser.add_argument('-g', '--genome', default=False, help='Genome assembly symbol. One of: {} (default: False)'.format(', '.join(__genomes__.keys())))
-    parser.add_argument('-p','--threads', type=int, default=1, help='Number of cpus to use (default: 1)')
-    parser.add_argument('-w','--whitelist', default=False, help='Text file of filtered cell barcodes, e.g. by Cell Ranger, STARSolo or your gene expression quantifier of choice (Recommended. Default: False)')
+    parser.add_argument('-p', '--threads', type=int, default=1, help='Number of cpus to use (default: 1)')
+    parser.add_argument('-w', '--whitelist', default=False, help='Text file of filtered cell barcodes, e.g. by Cell Ranger, STARSolo or your gene expression quantifier of choice (Recommended. Default: False)')
     parser.add_argument('--CBtag', type=str, default='CB', help='BAM tag containing the cell barcode sequence (default: CB)')
     parser.add_argument('--UMItag', type=str, default='UR', help='BAM tag containing the UMI sequence (default: UR)')
-    parser.add_argument('--min-overlap', default=None, help='Minimum overlap between read and TE (Default: disabled)')
+    parser.add_argument('--min-overlap',
+                        metavar='[BP <int> | FRACTION <float>]',
+                        default=None,
+                        help="Minimum overlap between read and TE"
+                        " as number of nucleotides if integer, or fraction of"
+                        " read's alignment if floating point"
+                        " (i.e. 0.00 < NUM <= 1.00) (Default: disabled)")
     parser.add_argument('--integers', default=False, action='store_true', help='Use if integers count are needed for downstream analysis (default: False)')
     parser.add_argument('--outdir', type=str, default='./IRescue_out/', help='Output directory name (default: IRescue_out)')
     parser.add_argument('--tmpdir', type=str, default='./IRescue_tmp/', help='Directory to store temporary files (default: IRescue_tmp)')
