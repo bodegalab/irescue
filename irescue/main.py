@@ -4,7 +4,7 @@ from irescue._version import __version__
 from irescue._genomes import __genomes__
 from irescue.misc import writerr, check_requirement, check_arguments, versiontuple, run_shell_cmd, check_tags
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat, checkIndex
-from irescue.count import split_bc, parse_features, count, formatMM
+from irescue.count import split_bc, parse_features, count, formatMM, writeEC
 import argparse, os
 from multiprocessing import Pool
 from functools import partial
@@ -37,6 +37,7 @@ def parseArguments():
     parser.add_argument('--integers', default=False, action='store_true', help='Use if integers count are needed for downstream analysis (default: False)')
     parser.add_argument('--outdir', type=str, default='./IRescue_out/', help='Output directory name (default: IRescue_out)')
     parser.add_argument('--tmpdir', type=str, default='./IRescue_tmp/', help='Directory to store temporary files (default: IRescue_tmp)')
+    parser.add_argument('--dumpEC', default=False, action='store_true', help='Write a description log file of Equivalence Classes (default: False).')
     parser.add_argument('--keeptmp', default=False, action='store_true', help='Keep temporary files (default: False).')
     parser.add_argument('--samtools', type=str, default='samtools', help='Path to samtools binary, in case it\'s not in PATH (Default: samtools)')
     parser.add_argument('--bedtools', type=str, default='bedtools', help='Path to bedtools binary, in case it\'s not in PATH (Default: bedtools)')
@@ -110,7 +111,7 @@ def main():
     # calculate TE counts
     countFun = partial(
         count, mappings_file, args.outdir, args.tmpdir, ftlist, args.integers,
-        args.verbose
+        args.dumpEC, args.verbose
     )
     if args.threads > 1:
         mtxFiles = pool.map(countFun, bc_per_thread)
@@ -123,10 +124,15 @@ def main():
         pool.join()
 
     # concatenate matrix files chunks
+    matrix_files = [ i for i, j in mtxFiles]
+    ecdump_files = [ j for i, j in mtxFiles]
     matrix_file = formatMM(
-        mtxFiles, outdir=args.outdir, features=ftlist, barcodes=bc_per_thread
+        matrix_files, outdir=args.outdir, features=ftlist, barcodes=bc_per_thread
     )
     writerr(f'Writing sparse matrix to {matrix_file}')
+    if args.dumpEC:
+        ecdump_file = writeEC(ecdump_files, outdir=args.outdir)
+        writerr(f'Writing Equivalence Classes to {ecdump_file}')
 
     if not args.keeptmp:
         writerr(f'Cleaning up temporary files.', send=args.verbose)

@@ -151,3 +151,20 @@ def check_tags(bamFile, CBtag, UMItag, nLines=False, exit_with_error=True, verbo
         )
     else:
         return(False)
+
+def iupac_nt_code(nts):
+    codes = {
+        'R': {'A', 'G'},
+        'Y': {'C', 'T'},
+        'S': {'G', 'C'},
+        'W': {'A', 'T'},
+        'K': {'G', 'T'},
+        'M': {'A', 'C'},
+        'B': {'C', 'G', 'T'},
+        'D': {'A', 'G', 'T'},
+        'H': {'A', 'C', 'T'},
+        'V': {'A', 'C', 'G'},
+        'N': {'A', 'C', 'G', 'T'}
+    }
+    out = [k for k, v in codes.items() if v == set(nts)][0]
+    return out
