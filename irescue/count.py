@@ -199,6 +199,8 @@ def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc
         if dumpec:
             ec_dump_file = tmpdir + f'/{chunkn}_ec_dump.tsv.gz'
             ecdump = gzip.open(ec_dump_file, 'wb')
+        else:
+            ec_dump_file = None
 
         for line in enumerate(data, start=1):
             # gather barcode, umi and feature from mappings file
