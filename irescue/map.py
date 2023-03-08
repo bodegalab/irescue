@@ -133,8 +133,8 @@ def getRefs(bamFile, bedFile):
         )
 
 # Intersect reads with repeatmasker regions. Return the intersection file path.
-def isec(bamFile, bedFile, whitelist, CBtag, UMItag, minOverlap, tmpdir,
-         samtools, bedtools, verbose, chrom):
+def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
+         tmpdir, samtools, bedtools, verbose, chrom):
     refdir = tmpdir + '/refs/'
     isecdir = tmpdir + '/isec/'
     makedirs(refdir, exist_ok=True)
@@ -167,17 +167,12 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, minOverlap, tmpdir,
     stream += f' {bedtools} bamtobed -i stdin -bed12 -split -splitD) '
 
     # filter by minimum overlap between read and feature, if set
-    ovfloat = ''
-    ovint = ''
-    if minOverlap:
-        if isinstance(minOverlap, float) and 0 < minOverlap <= 1:
-            ovfloat = f' -f {minOverlap} '
-        elif isinstance(minOverlap, int):
-            ovint = f' $NF>={minOverlap} '
+    ovfrac = f' -f {fracOverlap} ' if fracOverlap else ''
+    ovbp = f' $NF>={bpOverlap} ' if bpOverlap else ''
 
     # intersection command
     cmd = f'{bedtools} intersect -a {stream} -b {refFile} '
-    cmd += f' -split -bed -wo -sorted {ovfloat} | gawk -vOFS="\\t" \'{ovint} '
+    cmd += f' -split -bed -wo -sorted {ovfrac} | gawk -vOFS="\\t" \'{ovbp} '
     # remove mate information from read name
     cmd += ' { sub(/\/[12]$/,"",$4); '
     # concatenate CB and UMI with feature name

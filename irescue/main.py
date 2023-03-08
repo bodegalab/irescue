@@ -27,12 +27,13 @@ def parseArguments():
     parser.add_argument('-w', '--whitelist', default=False, help='Text file of filtered cell barcodes, e.g. by Cell Ranger, STARSolo or your gene expression quantifier of choice (Recommended. Default: False)')
     parser.add_argument('--CBtag', type=str, default='CB', help='BAM tag containing the cell barcode sequence (default: CB)')
     parser.add_argument('--UMItag', type=str, default='UR', help='BAM tag containing the UMI sequence (default: UR)')
-    parser.add_argument('--min-overlap',
-                        metavar='[BP <int> | FRACTION <float>]',
-                        default=None,
+    parser.add_argument('--min-bp-overlap', type=int, metavar='BP <int>',
+                        default=None, help="Minimum overlap between read and "
+                        "TE as number of nucleotides (Default: disabled)")
+    parser.add_argument('--min-fraction-overlap', type=float,
+                        metavar='FRACTION <float>', default=None,
                         help="Minimum overlap between read and TE"
-                        " as number of nucleotides if integer, or fraction of"
-                        " read's alignment if floating point"
+                        " as a fraction of read's alignment"
                         " (i.e. 0.00 < NUM <= 1.00) (Default: disabled)")
     parser.add_argument('--integers', default=False, action='store_true', help='Use if integers count are needed for downstream analysis (default: False)')
     parser.add_argument('--outdir', type=str, default='./IRescue_out/', help='Output directory name (default: IRescue_out)')
@@ -89,7 +90,7 @@ def main():
     writerr(f"Computing overlap between reads and TEs coordinates in the following references: {', '.join(chrNames)}", send=args.verbose)
     isecFun = partial(
         isec, args.bam, regions, whitelist, args.CBtag, args.UMItag,
-        args.min_overlap, args.tmpdir, args.samtools, args.bedtools, args.verbose
+        args.min_bp_overlap, args.min_fraction_overlap, args.tmpdir, args.samtools, args.bedtools, args.verbose
     )
     if args.threads > 1:
         isecFiles = pool.map(isecFun, chrNames)

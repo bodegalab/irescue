@@ -29,6 +29,16 @@ def check_path(cmdname):
 def versiontuple(v):
     return tuple(map(int, v.split('.')))
 
+def check_arguments(args):
+    if args.min_fraction_overlap:
+        mfo = args.min_fraction_overlap
+        if 0 < mfo <= 1:
+            pass
+        else:
+            writerr("ERROR: --min-fraction-overlap must be a floating point "
+                    "number between 0 and 1.", error=True)
+    return args
+
 def check_requirement(cmd, required_version, parser, verbose):
     if not check_path(cmd):
         writerr(f"ERROR: Couldn't find {cmd} in PATH. Please install {cmd} >={required_version} and try again.", error=True)
@@ -41,36 +51,6 @@ def check_requirement(cmd, required_version, parser, verbose):
                 writerr(f"Found {cmd} version {version}. Proceeding.", send=verbose)
         except:
             writerr(f"WARNING: Found {cmd} but couldn't parse its version. NB: {cmd} versions prior {required_version} are not supported.")
-
-def check_arguments(args):
-    if args.min_overlap:
-        min_overlap = args.min_overlap
-        if isinstance(min_overlap, str):
-            if '.' in min_overlap:
-                min_overlap = float(min_overlap)
-            else:
-                min_overlap = int(min_overlap)
-        elif isinstance(min_overlap, float) and not 0 < min_overlap <= 1:
-            writerr(
-                'Read length proportion must be greater than 0.00'
-                ' and up to 1.00',
-                error=True
-            )
-        elif isinstance(min_overlap, int):
-            pass
-        else:
-            writerr(
-                '--min-overlap must be an integer or a floating point number'
-                ' greater than 0.00 and up to 1.00',
-                error=True
-            )
-        writerr(
-            'Selecting reads-TE alignments'
-            f' with minimum overlap of {min_overlap}',
-            send=args.verbose
-        )
-        args.min_overlap = min_overlap
-    return args
 
 # Small function to write a message to stderr with timestamp
 def writerr(msg, error=False, send=True):
