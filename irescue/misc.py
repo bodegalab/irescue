@@ -29,6 +29,16 @@ def check_path(cmdname):
 def versiontuple(v):
     return tuple(map(int, v.split('.')))
 
+def check_arguments(args):
+    if args.min_fraction_overlap:
+        mfo = args.min_fraction_overlap
+        if 0 < mfo <= 1:
+            pass
+        else:
+            writerr("ERROR: --min-fraction-overlap must be a floating point "
+                    "number between 0 and 1.", error=True)
+    return args
+
 def check_requirement(cmd, required_version, parser, verbose):
     if not check_path(cmd):
         writerr(f"ERROR: Couldn't find {cmd} in PATH. Please install {cmd} >={required_version} and try again.", error=True)

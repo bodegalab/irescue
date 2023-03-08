@@ -4,6 +4,7 @@ from irescue.misc import testGz
 from irescue.misc import writerr
 from irescue.misc import unGzip
 from irescue.misc import run_shell_cmd
+from irescue.misc import getlen
 from pysam import idxstats, AlignmentFile, index
 from gzip import open as gzopen
 from os import makedirs
@@ -132,7 +133,8 @@ def getRefs(bamFile, bedFile):
         )
 
 # Intersect reads with repeatmasker regions. Return the intersection file path.
-def isec(bamFile, bedFile, whitelist, CBtag, UMItag, tmpdir, samtools, bedtools, verbose, chrom):
+def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
+         tmpdir, samtools, bedtools, verbose, chrom):
     refdir = tmpdir + '/refs/'
     isecdir = tmpdir + '/isec/'
     makedirs(refdir, exist_ok=True)
@@ -164,14 +166,19 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, tmpdir, samtools, bedtools,
     stream += f' {samtools} view -u - | '
     stream += f' {bedtools} bamtobed -i stdin -bed12 -split -splitD) '
 
+    # filter by minimum overlap between read and feature, if set
+    ovfrac = f' -f {fracOverlap} ' if fracOverlap else ''
+    ovbp = f' $NF>={bpOverlap} ' if bpOverlap else ''
+
     # intersection command
-    cmd = f'{bedtools} intersect -a {stream} -b {refFile} -split -bed -wo -sorted | '
-    # remove mate information from read name and
+    cmd = f'{bedtools} intersect -a {stream} -b {refFile} '
+    cmd += f' -split -bed -wo -sorted {ovfrac} | gawk -vOFS="\\t" \'{ovbp} '
+    # remove mate information from read name
+    cmd += ' { sub(/\/[12]$/,"",$4); '
     # concatenate CB and UMI with feature name
-    cmd += ' gawk \'{ sub(/\/[12]$/,"",$4); n=split($4,qname,/\//); $4=qname[n-1]"\\t"qname[n]"\\t"$16 } '
-    #cmd += ' !x[$4]++ {OFS="\\t"; print $4}\' | '
-    cmd += ' {OFS="\\t"; print $4}\' | '
-    cmd += f' gzip > {isecFile}'
+    cmd += ' n=split($4,qname,/\//); $4=qname[n-1]"\\t"qname[n]"\\t"$16; '
+    cmd += ' print $4 }\' '
+    cmd += f' | gzip > {isecFile}'
 
     writerr(f'Extracting {chrom} reference', send=verbose)
     run_shell_cmd(cmd0)
@@ -204,8 +211,28 @@ def chrcat(filesList, threads, outdir, tmpdir, verbose):
 
     writerr('Concatenating mappings', send=verbose)
     run_shell_cmd(cmd0)
+    if getlen(mappings_file) == 0:
+        writerr(
+            f'No read-TE mappings found in {mappings_file}.'
+            ' Check annotation and temporary files to troubleshoot.',
+            error=True
+        )
     writerr(f'Writing mapped barcodes to {barcodes_file}')
     run_shell_cmd(cmd1)
+    if getlen(barcodes_file) == 0:
+        writerr(
+            f'No features written in {features_file}.'
+            ' Check BAM format and reference annotation (e.g. chr names)'
+            ' to troubleshoot.',
+            error=True
+        )
     writerr(f'Writing mapped features to {features_file}')
     run_shell_cmd(cmd2)
+    if getlen(features_file) == 0:
+        writerr(
+            f'No features written in {features_file}.'
+            ' Check annotation and temporary files to troubleshoot.',
+            error=True
+        )
+
     return mappings_file, barcodes_file, features_file
