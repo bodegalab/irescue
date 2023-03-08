@@ -2,8 +2,10 @@
 
 from irescue._version import __version__
 from irescue._genomes import __genomes__
-from irescue.misc import writerr, check_requirement, check_arguments, versiontuple, run_shell_cmd, check_tags
-from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat, checkIndex
+from irescue.misc import writerr, versiontuple, run_shell_cmd
+from irescue.misc import check_requirement, check_arguments, check_tags
+from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat
+from irescue.map import checkIndex
 from irescue.count import split_bc, parse_features, count, formatMM, writeEC
 import argparse, os
 from multiprocessing import Pool
@@ -14,48 +16,121 @@ def parseArguments():
     parser = argparse.ArgumentParser(
         prog='IRescue',
         usage='irescue -b <file.bam>'
-            ' [-g <genome_assembly> | -r <repeats.bed>] [OPTIONS]',
+            ' [-g GENOME_ASSEMBLY | -r BED_FILE] [OPTIONS]',
         description='IRescue (Interspersed Repeats single-cell quantifier):'
             ' a tool for quantifying transposable elements expression'
             ' in scRNA-seq.',
         epilog='Home page: https://github.com/bodegalab/irescue'
     )
-    parser.add_argument('-b', '--bam', required=True, help='scRNA-seq reads aligned to a reference genome')
-    parser.add_argument('-r', '--regions', default=False, help='Genomic TE coordinates in bed format. Takes priority over --genome paramter (default: False).')
-    parser.add_argument('-g', '--genome', default=False, help='Genome assembly symbol. One of: {} (default: False)'.format(', '.join(__genomes__.keys())))
-    parser.add_argument('-p', '--threads', type=int, default=1, help='Number of cpus to use (default: 1)')
-    parser.add_argument('-w', '--whitelist', default=False, help='Text file of filtered cell barcodes, e.g. by Cell Ranger, STARSolo or your gene expression quantifier of choice (Recommended. Default: False)')
-    parser.add_argument('--CBtag', type=str, default='CB', help='BAM tag containing the cell barcode sequence (default: CB)')
-    parser.add_argument('--UMItag', type=str, default='UR', help='BAM tag containing the UMI sequence (default: UR)')
-    parser.add_argument('--min-bp-overlap', type=int, metavar='BP <int>',
-                        default=None, help="Minimum overlap between read and "
-                        "TE as number of nucleotides (Default: disabled)")
-    parser.add_argument('--min-fraction-overlap', type=float,
-                        metavar='FRACTION <float>', default=None,
+    parser.add_argument('-b', '--bam',
+                        required=True,
+                        metavar='FILE',
+                        help='scRNA-seq reads aligned to a reference genome '
+                        '(required).')
+    parser.add_argument('-r', '--regions',
+                        metavar='FILE',
+                        help='Genomic TE coordinates in bed format. '
+                        'Takes priority over --genome (default: %(default)s).')
+    parser.add_argument('-g', '--genome',
+                        metavar='STR',
+                        help='Genome assembly symbol. One of: {} (default: '
+                        '%(default)s).'.format(', '.join(__genomes__)))
+    parser.add_argument('-p', '--threads',
+                        type=int,
+                        default=1,
+                        metavar='CPUS <int>',
+                        help='Number of cpus to use (default: %(default)s).')
+    parser.add_argument('-w', '--whitelist',
+                        metavar='FILE',
+                        help='Text file of filtered cell barcodes by e.g. '
+                        'Cell Ranger, STARSolo or your gene expression '
+                        'quantifier of choice (Recommended. '
+                        'default: %(default)s).')
+    parser.add_argument('-cb', '--CBtag',
+                        default='CB',
+                        metavar='STR',
+                        help='BAM tag containing the cell barcode sequence '
+                        '(default: %(default)s).')
+    parser.add_argument('-umi', '--UMItag',
+                        default='UR',
+                        metavar='STR',
+                        help='BAM tag containing the UMI sequence '
+                        '(default: %(default)s).')
+    parser.add_argument('-o', '--outdir',
+                        default='IRescue_out',
+                        metavar='DIR',
+                        help='Output directory name (default: %(default)s).')
+    parser.add_argument('--min-bp-overlap',
+                        type=int,
+                        metavar='INT',
+                        help="Minimum overlap between read and TE as number "
+                        "of nucleotides (Default: disabled).")
+    parser.add_argument('--min-fraction-overlap',
+                        type=float,
+                        metavar='FLOAT',
                         help="Minimum overlap between read and TE"
                         " as a fraction of read's alignment"
-                        " (i.e. 0.00 < NUM <= 1.00) (Default: disabled)")
-    parser.add_argument('--integers', default=False, action='store_true', help='Use if integers count are needed for downstream analysis (default: False)')
-    parser.add_argument('--outdir', type=str, default='./IRescue_out/', help='Output directory name (default: IRescue_out)')
-    parser.add_argument('--tmpdir', type=str, default='./IRescue_tmp/', help='Directory to store temporary files (default: IRescue_tmp)')
-    parser.add_argument('--dumpEC', default=False, action='store_true', help='Write a description log file of Equivalence Classes (default: False).')
-    parser.add_argument('--keeptmp', default=False, action='store_true', help='Keep temporary files (default: False).')
-    parser.add_argument('--samtools', type=str, default='samtools', help='Path to samtools binary, in case it\'s not in PATH (Default: samtools)')
-    parser.add_argument('--bedtools', type=str, default='bedtools', help='Path to bedtools binary, in case it\'s not in PATH (Default: bedtools)')
-    parser.add_argument('--no-tags-check', default=False, action='store_true', help='Suppress checking for CBtag and UMItag presence in bam file (default: False)')
-    parser.add_argument('-v', '--verbose', default=False, action='store_true', help='Writes a lot of stuff to stderr, such as chromosomes as they are mapped and cell barcodes as they are processed.')
-    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(__version__), help='Print software\'s version and exit')
+                        " (i.e. 0.00 <= NUM <= 1.00) (Default: disabled).")
+    parser.add_argument('--integers',
+                        action='store_true',
+                        help='Use if integers count are needed for '
+                        'downstream analysis.')
+    parser.add_argument('--tmpdir',
+                        default='IRescue_tmp',
+                        metavar='DIR',
+                        help='Directory to store temporary files '
+                        '(default: %(default)s).')
+    parser.add_argument('--dumpEC',
+                        action='store_true',
+                        help='Write a description log file of Equivalence '
+                        'Classes.')
+    parser.add_argument('--keeptmp',
+                        action='store_true',
+                        help='Keep temporary files.')
+    parser.add_argument('--samtools',
+                        default='samtools',
+                        metavar='PATH',
+                        help="Path to samtools binary, in case it's not in "
+                        "PATH (Default: %(default)s).")
+    parser.add_argument('--bedtools',
+                        default='bedtools',
+                        metavar='PATH',
+                        help="Path to bedtools binary, in case it's not in "
+                        "PATH (Default: %(default)s).")
+    parser.add_argument('--no-tags-check',
+                        action='store_true',
+                        help='Suppress checking for CBtag and UMItag '
+                        'presence in bam file.')
+    parser.add_argument('-v', '--verbose',
+                        action='store_true',
+                        help='Writes a lot of stuff to stderr, such as '
+                        'chromosomes as they are mapped and cell barcodes '
+                        'as they are processed.')
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version='%(prog)s {}'.format(__version__),
+                        help="Print software's version and exit.")
     return parser
 
+
 def main():
-    
     parser = parseArguments()
     args = parser.parse_args()
     args = check_arguments(args)
 
     # Check requirements
-    check_requirement(args.bedtools, '2.30.0', lambda: versiontuple(run_shell_cmd('bedtools --version').split()[1][1:]), args.verbose)
-    check_requirement(args.samtools, '1.11', lambda: versiontuple(run_shell_cmd('samtools --version').split()[1]), args.verbose)
+    check_requirement(
+        args.bedtools, '2.30.0',
+        lambda: versiontuple(
+            run_shell_cmd('bedtools --version').split()[1][1:]
+        ),
+        args.verbose
+    )
+    check_requirement(
+        args.samtools, '1.11',
+        lambda: versiontuple(run_shell_cmd('samtools --version').split()[1]),
+        args.verbose
+    )
 
     # Check if the selected cell barcode and UMI tags are present in bam file.
     if not args.no_tags_check:
@@ -87,10 +162,15 @@ def main():
         pool = Pool(args.threads)
 
     # Execute intersection between reads and TE coordinates
-    writerr(f"Computing overlap between reads and TEs coordinates in the following references: {', '.join(chrNames)}", send=args.verbose)
+    writerr(
+        "Computing overlap between reads and TEs coordinates in the "
+        "following references: {}".format(', '.join(chrNames)),
+        send=args.verbose
+    )
     isecFun = partial(
         isec, args.bam, regions, whitelist, args.CBtag, args.UMItag,
-        args.min_bp_overlap, args.min_fraction_overlap, args.tmpdir, args.samtools, args.bedtools, args.verbose
+        args.min_bp_overlap, args.min_fraction_overlap, args.tmpdir,
+        args.samtools, args.bedtools, args.verbose
     )
     if args.threads > 1:
         isecFiles = pool.map(isecFun, chrNames)
@@ -118,7 +198,7 @@ def main():
         mtxFiles = pool.map(countFun, bc_per_thread)
     else:
         mtxFiles = list(map(countFun, bc_per_thread))
-    
+
     # close processes pool
     if args.threads > 1:
         pool.close()
@@ -128,7 +208,8 @@ def main():
     matrix_files = [ i for i, j in mtxFiles]
     ecdump_files = [ j for i, j in mtxFiles]
     matrix_file = formatMM(
-        matrix_files, outdir=args.outdir, features=ftlist, barcodes=bc_per_thread
+        matrix_files, outdir=args.outdir, features=ftlist,
+        barcodes=bc_per_thread
     )
     writerr(f'Writing sparse matrix to {matrix_file}')
     if args.dumpEC:

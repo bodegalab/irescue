@@ -8,8 +8,10 @@ from datetime import datetime
 from shutil import which
 import pysam
 
-# Execute a command with subprocess
 def run_shell_cmd(cmd):
+    """
+    Execute a command on bash shell with subprocess.
+    """
     p = subprocess.Popen(
         ['/bin/bash', '-o', 'pipefail'],
         stdin=subprocess.PIPE,
@@ -24,15 +26,23 @@ def run_shell_cmd(cmd):
     return stdout.strip('\n')
 
 def check_path(cmdname):
+    """
+    Check if a command name is available in PATH.
+    """
     return which(cmdname) is not None
 
-def versiontuple(v):
-    return tuple(map(int, v.split('.')))
+def versiontuple(version):
+    """
+    Convert a semver string "X.Y.Z" to a tuple of integers (X, Y, Z).
+    """
+    return tuple(map(int, version.split('.')))
 
 def check_arguments(args):
-    if args.min_fraction_overlap:
-        mfo = args.min_fraction_overlap
-        if 0 < mfo <= 1:
+    """
+    Check validity of arguments.
+    """
+    if isinstance(args.min_fraction_overlap, (int, float)):
+        if 0 <= args.min_fraction_overlap <= 1:
             pass
         else:
             writerr("ERROR: --min-fraction-overlap must be a floating point "
@@ -40,20 +50,49 @@ def check_arguments(args):
     return args
 
 def check_requirement(cmd, required_version, parser, verbose):
+    """
+    Check if the required version for a software has been installed.
+    """
     if not check_path(cmd):
-        writerr(f"ERROR: Couldn't find {cmd} in PATH. Please install {cmd} >={required_version} and try again.", error=True)
+        writerr(
+            f"ERROR: Couldn't find {cmd} in PATH. Please install "
+            f"{cmd} >={required_version} and try again.",
+            error=True
+        )
     else:
         try:
             version = parser()
             if version < versiontuple(required_version):
-                writerr(f"WARNING: Found {cmd} version {version}. Versions prior {required_version} are not supported.")
+                writerr(
+                    f"WARNING: Found {cmd} version {version}. "
+                    f"Versions prior {required_version} are not supported."
+                )
             else:
-                writerr(f"Found {cmd} version {version}. Proceeding.", send=verbose)
+                writerr(
+                    f"Found {cmd} version {version}. Proceeding.",
+                    send=verbose
+                )
         except:
-            writerr(f"WARNING: Found {cmd} but couldn't parse its version. NB: {cmd} versions prior {required_version} are not supported.")
+            writerr(
+                f"WARNING: Found {cmd} but couldn't parse its version. "
+                f"NB: {cmd} versions prior {required_version} are "
+                f"not supported."
+            )
 
 # Small function to write a message to stderr with timestamp
 def writerr(msg, error=False, send=True):
+    """
+    Write a message to stderr with timestamp.
+
+    Parameters
+    ----------
+    msg: string
+         Message to write to stderr.
+    error: bool
+           Set True if the message is an error (write with sys.exit).
+    send: bool
+          Decides if the message should be sent (useful for verbose messages).
+    """
     if send:
         timelog = datetime.now().strftime("%m/%d/%Y - %H:%M:%S")
         message = f'[{timelog}] '
@@ -65,8 +104,10 @@ def writerr(msg, error=False, send=True):
         else:
             sys.stderr.write(message)
 
-# Test if file is gzip
 def testGz(input_file):
+    """
+    Check if a file is gzip compressed.
+    """
     with gzip.open(input_file, 'rb') as f:
         try:
             f.read(1)
@@ -76,14 +117,24 @@ def testGz(input_file):
 
 # Uncompress gzipped file
 def unGzip(input_file, output_file):
+    """
+    Uncompress a gzip file to a new file.
+
+    Parameters
+    ----------
+    input_file: gzip file to decompress.
+    output_file: uncompressed file to write.
+    """
     with gzip.open(input_file, 'rb') as fin,\
     open(output_file, 'w') as fout:
         for line in fin:
             fout.write(line.decode('utf-8'))
     return output_file
 
-# Count number of lines in file (also compressed)
 def getlen(file):
+    """
+    Count the number of lines in a file (plain or gzip-compressed).
+    """
     if testGz(file):
         f = gzip.open(file, 'rb')
     else:
@@ -92,23 +143,56 @@ def getlen(file):
     f.close()
     return out
 
-# Flatten a list of sublists
 def flatten(x):
+    """
+    Flatten a list of sublists.
+    """
     return [item for sublist in x for item in sublist]
 
-# Check if bam contains barcode and umi tags
-def check_tags(bamFile, CBtag, UMItag, nLines=False, exit_with_error=True, verbose=False):
+def check_tags(
+        bamFile, CBtag, UMItag,
+        nLines=None, exit_with_error=True, verbose=False
+):
+    """
+    Check if BAM file contains barcode and UMI tags.
+    Stops at first co-presence of both tags.
+
+    Parameters
+    ----------
+    bamFile: BAM file.
+    CBtag: string
+        Cell Barcode sequence SAM tag
+    UMItag: string
+        UMI sequence SAM tag
+    nLines: int
+        Check first N lines.
+    exit_with_error: bool
+        Return a sys.exit message if tags are not found.
+    verbose: bool
+        Write progress info to stderr.
+    """
     with pysam.AlignmentFile(bamFile, 'rb') as f:
         c = 1
-        writerr(f"Testing bam file for {CBtag} and {UMItag} tags presence. Will stop at the first occurrence.", send=verbose)
+        writerr(
+            f"Testing bam file for {CBtag} and {UMItag} tags presence. "
+            "Will stop at the first occurrence.",
+            send=verbose
+        )
         for read in f:
             if nLines and c >= nLines:
                 break
             elif c % 1000000 == 0:
-                writerr(f"WARNING: Couldn't find {CBtag} and {UMItag} tags in the first {c} records. Did you select the right tags? Continuing parsing bam...")
+                writerr(
+                    f"WARNING: Couldn't find {CBtag} and {UMItag} tags in "
+                    f"the first {c} records. Did you select the right tags? "
+                    "Continuing parsing bam until first occurrence..."
+                )
             try:
                 read.get_tag(CBtag) and read.get_tag(UMItag)
-                writerr(f"Found {CBtag} and {UMItag} tags occurrence in bam's line {c}.")
+                writerr(
+                    f"Found {CBtag} and {UMItag} tags occurrence "
+                    f"in bam's line {c}."
+                )
                 return(True)
             except:
                 c += 1
@@ -133,6 +217,9 @@ def check_tags(bamFile, CBtag, UMItag, nLines=False, exit_with_error=True, verbo
         return(False)
 
 def iupac_nt_code(nts):
+    """
+    Return the IUPAC code correspondent to a set of input nucleotides.
+    """
     codes = {
         'R': {'A', 'G'},
         'Y': {'C', 'T'},

@@ -7,8 +7,7 @@ from irescue.misc import run_shell_cmd
 from irescue.misc import getlen
 from pysam import idxstats, AlignmentFile, index
 from gzip import open as gzopen
-from os import makedirs
-import sys, requests, io
+import requests, io, os
 
 # Check if bam file is indexed
 def checkIndex(bamFile, verbose):
@@ -18,7 +17,11 @@ def checkIndex(bamFile, verbose):
             try:
                 index(bamFile)
             except:
-                writerr(f'Couldn\'t index the BAM file. Please do so manually with `samtools index {bamFile}`.', error=True)
+                writerr(
+                    "Couldn't index the BAM file. Please do so manually "
+                    f"with `samtools index {bamFile}`.",
+                    error=True
+                )
             else:
                 writerr('BAM indexing done.')
         else:
@@ -43,24 +46,37 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
             line = rl(f)
         # check for minimum column number
         if len(line.strip().split('\t')) < 4:
-            writerr('Error: please provide a tab-separated BED file with at least 4 columns and TE feature name (e.g. subfamily) in 4th column.', error=True)
+            writerr(
+                "Error: please provide a tab-separated BED file with at "
+                "least 4 columns and TE feature name (e.g. subfamily) "
+                "in 4th column.",
+                error=True
+            )
         f.close()
         out = regions
-    # if no repeatmasker file is provided, and a genome assembly name is provided, download and prepare a rmsk.bed file
+    # if no repeatmasker file is provided, and a genome assembly name is
+    # provided, download and prepare a rmsk.bed file
     elif genome:
         if not genome in genomes:
             writerr(
-                f"ERROR: Genome assembly name shouldbe one of: {', '.join(genomes.keys())}",
+                "ERROR: Genome assembly name shouldbe one of: "
+                f"{', '.join(genomes.keys())}",
                 error=True
             )
         url, header_lines = genomes[genome]
-        writerr(f'Downloading and parsing RepeatMasker annotation for assembly {genome} from {url} ...')
+        writerr(
+            "Downloading and parsing RepeatMasker annotation for "
+            f"assembly {genome} from {url} ...")
         try:
             response = requests.get(url, stream=True, timeout=60)
         except:
-            writerr("ERROR: Download of RepeatMasker annotation failed. Couldn't connect to host.", error=True)
+            writerr(
+                "ERROR: Download of RepeatMasker annotation failed. "
+                "Couldn't connect to host.",
+                error=True
+            )
         rmsk = gzopen(io.BytesIO(response.content), 'rb')
-        out = tmpdir + '/' + outname
+        out = os.path.join(tmpdir, outname)
         with open(out, 'w') as f:
             # print header
             h = ['#chr','start','end','name','score','strand']
@@ -71,10 +87,18 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
             for _ in range(header_lines):
                 next(rmsk)
             # parse rmsk
+            fams_to_skip = [
+                'Low_complexity',
+                'Simple_repeat',
+                'rRNA',
+                'scRNA',
+                'srpRNA',
+                'tRNA'
+            ]
             for line in rmsk:
                 lst = line.decode('utf-8').strip().split()
                 strand, subfamily, famclass = lst[8:11]
-                if famclass.split('/')[0] in ['Low_complexity','Simple_repeat','rRNA','scRNA','srpRNA','tRNA']:
+                if famclass.split('/')[0] in fams_to_skip:
                     continue
                 # concatenate family and class with subfamily
                 subfamily += '~' + famclass
@@ -88,14 +112,18 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
                 outl += '\n'
                 f.write(outl)
     else:
-        writerr('Error: it is mandatory to define either --regions OR --genome paramter.', error=True)
+        writerr(
+            "Error: it is mandatory to define either --regions OR "
+            "--genome parameter.",
+            error=True
+        )
     return(out)
 
 # Uncompress the whitelist file if compressed.
 # Return the whitelist path, or False if not using a whitelist.
 def prepare_whitelist(whitelist, tmpdir):
     if whitelist and testGz(whitelist):
-        wlout = tmpdir + '/whitelist.tsv'
+        wlout = os.path.join(tmpdir, 'whitelist.tsv')
         whitelist = unGzip(whitelist, wlout)
     return whitelist
 
@@ -117,7 +145,10 @@ def getRefs(bamFile, bedFile):
                 bedChrNames.add(line.split('\t')[0])
     skipChr = [x for x in chrNames if x not in bedChrNames]
     if skipChr:
-        writerr('WARNING: The following references contain read alignments but are not found in the TE annotation and will be skipped: ' + ', '.join(skipChr))
+        writerr(
+            "WARNING: The following references contain read alignments but "
+            "are not found in the TE annotation and will be skipped: "
+            f"{', '.join(skipChr)}")
         chrNames = [x for x in chrNames if x in bedChrNames]
     if chrNames:
         return chrNames
@@ -135,18 +166,19 @@ def getRefs(bamFile, bedFile):
 # Intersect reads with repeatmasker regions. Return the intersection file path.
 def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
          tmpdir, samtools, bedtools, verbose, chrom):
-    refdir = tmpdir + '/refs/'
-    isecdir = tmpdir + '/isec/'
-    makedirs(refdir, exist_ok=True)
-    makedirs(isecdir, exist_ok=True)
+    refdir = os.path.join(tmpdir, 'refs')
+    isecdir = os.path.join(tmpdir, 'isec')
+    os.makedirs(refdir, exist_ok=True)
+    os.makedirs(isecdir, exist_ok=True)
 
-    refFile = refdir + chrom + '.bed.gz'
-    isecFile = isecdir + chrom + '.isec.bed.gz'
+    refFile = os.path.join(refdir, chrom + '.bed.gz')
+    isecFile = os.path.join(isecdir, chrom + '.isec.bed.gz')
 
     # split bed file by chromosome
     sort = 'LC_ALL=C sort -k1,1 -k2,2n --buffer-size=1G'
     if bedFile[-3:] == '.gz':
-        cmd0 = f'zcat {bedFile} | gawk \'$1=="{chrom}"\' | {sort} | gzip > {refFile}'
+        cmd0 = f'zcat {bedFile} | gawk \'$1=="{chrom}"\' '
+        cmd0 += f' | {sort} | gzip > {refFile}'
     else:
         cmd0 = f'gawk \'$1=="{chrom}"\' {bedFile} | {sort} | gzip > {refFile}'
 
@@ -157,8 +189,10 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
         stream = f' <({samtools} view -h {bamFile} {chrom} | '
     stream += ' gawk \'!($1~/^@/) { split("", tags); '
     stream += ' for (i=12;i<=NF;i++) {split($i,tag,":"); tags[tag[1]]=tag[3]}; '
-    # Discard records without CB tag, unvalid STARSolo CBs, missing UMI tag and homopolymer UMIs
-    stream += f' if(tags["{CBtag}"]~/^(|-)$/ || tags["{UMItag}"]~/^$|^(A+|G+|T+|C+|N+)$/) {{next}}; '
+    # Discard records without CB tag, unvalid STARSolo CBs, missing UMI tag,
+    # UMIs with Ns and homopolymer UMIs
+    stream += f' if(tags["{CBtag}"]~/^(|-)$/ || tags["{UMItag}"]~/.*N.*/ || '
+    stream += f' tags["{UMItag}"]~/^$|^(A+|G+|T+|C+)$/) {{next}}; '
     # Append CB and UMI to read name
     stream += f' $1=$1"/"tags["{CBtag}"]"/"tags["{UMItag}"]; '
     stream += ' } '
@@ -190,10 +224,10 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
 
 # Concatenate and sort data obtained from isec()
 def chrcat(filesList, threads, outdir, tmpdir, verbose):
-    makedirs(outdir, exist_ok=True)
-    mappings_file = tmpdir + '/cb_umi_te.bed.gz'
-    barcodes_file = outdir + '/barcodes.tsv.gz'
-    features_file = outdir + '/features.tsv.gz'
+    os.makedirs(outdir, exist_ok=True)
+    mappings_file = os.path.join(tmpdir, 'cb_umi_te.bed.gz')
+    barcodes_file = os.path.join(outdir, 'barcodes.tsv.gz')
+    features_file = os.path.join(outdir, 'features.tsv.gz')
     bedFiles = ' '.join(filesList)
     cmd0 = f'zcat {bedFiles} '
     cmd0 += f' | LC_ALL=C sort --parallel {threads} --buffer-size 2G '

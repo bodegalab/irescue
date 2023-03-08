@@ -5,8 +5,10 @@ from irescue.misc import getlen, writerr, flatten, run_shell_cmd, iupac_nt_code
 import gzip
 import os
 
-# calculate mismatches between sequences of same length
 def find_mm(x, y):
+    """
+    Calculate number of mismatches between sequences of the same length
+    """
     if len(x) != len(y):
         return -1
     mm = 0
@@ -15,8 +17,17 @@ def find_mm(x, y):
             mm += 1
     return mm
 
-# collapse UMI graph
 def collapse_networks(graph):
+    """
+    Collapse a UMI graph to a graph of the smallest number of hubs.
+
+    Parameters
+    ----------
+    graph: dict
+        A dictionary with nodes as keys and the set of adjacent nodes
+        (including the node itself) as values.
+        e.g.: {0: {0,1,2}, 1: {0,1}, 2: {0,2,3}}
+    """
     out = dict()
     for key, value in graph.items():
         out[key] = []
@@ -34,6 +45,20 @@ def collapse_networks(graph):
 
 # calculate counts of a cell from mappings dictionary
 def cellCount(maps, intcount=False, dumpec=False):
+    """
+    Deduplicate UMI counts of a cell.
+
+    Parameters
+    ----------
+    maps: dict
+        Dictionary of all UMI-TE mappings of the cell.
+        e.g.: {UMI: {TE_1, TE_2}}
+    intcount: bool
+        Convert all counts to integer.
+    dumpec:
+        Make a list of rows for the Equivalence Classes dump (to use with
+        --dumpEC on)
+    """
 
     # get and index equivalence classes from maps
     eclist = list()
@@ -144,14 +169,19 @@ def cellCount(maps, intcount=False, dumpec=False):
     return ec_log, counts
 
 def parse_features(features_file):
-    '''Generator for (index,feature) tuples'''
+    """
+    Parses the features.tsv file, assigns an index (int) for each feature and
+    yields (index, feature) tuples.
+    """
     with gzip.open(features_file, 'rb') as f:
         for i, line in enumerate(f):
             l = line.decode('utf-8').strip().split('\t')
             yield (l[0], i+1)
 
-def split_int(num,div):
-    '''Splits an integer x into n integers whose sum is equal to x'''
+def split_int(num, div):
+    """
+    Splits an integer X into N integers whose sum is equal to X.
+    """
     split = int(num/div)
     for i in range(0, num, split):
         j = i + split
@@ -162,7 +192,9 @@ def split_int(num,div):
         yield range(i, j)
 
 def split_bc(barcode_file, n):
-    '''Yields barcodes (index,sequence) tuples in n chunks'''
+    """
+    Yields barcodes (index,sequence) tuples in n chunks.
+    """
     bclen = getlen(barcode_file)
     #split = round(bclen/n)
     with gzip.open(barcode_file, 'rb') as f:
@@ -171,18 +203,46 @@ def split_bc(barcode_file, n):
             yield (c,[(next(f).decode('utf-8').strip(),x+1) for x in chunk])
             c+=1
 
-def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc_split):
+def count(
+        mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose,
+        bc_split
+):
+    """
+    Run cellCount() for a set of barcodes.
+
+    Parameters
+    ----------
+    mappings_file: str
+        File containing UMI-TE mappings (3-columns text of CB-UMI-TE)
+    outdir: str
+        Output dir to write into.
+    tmpdir: str
+        Directory to write temporary files into.
+    features: list
+        List of (index, feature) tuples, generated with parse_features().
+    intcount: bool
+        Convert all counts to integer.
+    dumpec: bool
+        Write a report of equivalence classes and UMI deduplication.
+    verbose: bool
+        Be verbose.
+    bc_split: list
+        List of barcodes to process, generated with split_bc().
+    """
     '''Runs cellCount for a set of barcodes'''
     os.makedirs(outdir, exist_ok=True)
     os.makedirs(tmpdir, exist_ok=True)
 
     # set temporary matrix name prefix as chunk number
     chunkn = bc_split[0]
-    matrix_file = tmpdir + f'/{chunkn}_matrix.mtx.gz'
+    matrix_file = os.path.join(tmpdir, f'{chunkn}_matrix.mtx.gz')
 
     # parse barcodes in a SEQUENCE:INDEX dictionary
     barcodes = dict(bc_split[1])
-    writerr(f'Processing {len(barcodes)} barcodes from chunk {chunkn}', send=verbose)
+    writerr(
+        f'Processing {len(barcodes)} barcodes from chunk {chunkn}',
+        send=verbose
+    )
 
     # get number of lines in mappings_file
     nlines = getlen(mappings_file)
@@ -197,7 +257,7 @@ def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc
     gzip.open(matrix_file, 'wb') as mtxFile:
         
         if dumpec:
-            ec_dump_file = tmpdir + f'/{chunkn}_ec_dump.tsv.gz'
+            ec_dump_file = os.path.join(tmpdir, f'{chunkn}_ec_dump.tsv.gz')
             ecdump = gzip.open(ec_dump_file, 'wb')
         else:
             ec_dump_file = None
@@ -213,24 +273,35 @@ def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc
                 break
 
             if not cell:
-                # skip to the first cell barcode contained in the current barcodes chunk
+                # skip to the first cell barcode contained in the current
+                # barcodes chunk
                 if cx not in barcodes:
                     continue
                 else:
                     cell = cx
 
-            # if cell barcode changes, compute counts from previous cell's mappings
+            # if cell barcode changes, compute counts from previous cell's
+            # mappings
             if cx != cell and cell in barcodes:
                 cellidx = barcodes.pop(cell)
-                writerr(f'[{chunkn}] Computing counts for cell barcode {cellidx} ({cell})', send=verbose)
+                writerr(
+                    f'[{chunkn}] Computing counts for cell barcode {cellidx} '
+                    '({cell})',
+                    send=verbose
+                )
                 # compute final counts of the cell
-                ec_log, counts = cellCount(maps, intcount=intcount, dumpec=dumpec)
+                ec_log, counts = cellCount(
+                    maps,
+                    intcount=intcount,
+                    dumpec=dumpec
+                )
                 # arrange counts in a data frame and write to text file
-                lines = [ f'{features[k]} {str(cellidx)} {str(v)}\n'.encode() \
-                        for k, v in counts.items() ]
+                lines = [f'{features[k]} {str(cellidx)} {str(v)}\n'.encode() \
+                         for k, v in counts.items()]
                 mtxFile.writelines(lines)
                 if dumpec:
-                    ec_log = [f'{str(cellidx)}\t{cell}\t{x}'.encode() for x in ec_log]
+                    ec_log = [f'{str(cellidx)}\t{cell}\t{x}'.encode() \
+                              for x in ec_log]
                     ecdump.writelines(ec_log)
                 # re-initialize mappings dict
                 maps = dict()
@@ -251,22 +322,35 @@ def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc
                     # add count to existing feature in UMI
                     maps[ux][te]=1
 
-            # if end of file is reached, compute counts from current cell's mappings
+            # if end of file is reached, compute counts from current cell's
+            # mappings
             if line[0] == nlines and cell in barcodes:
                 cellidx = barcodes.pop(cell)
-                writerr(f'[{chunkn}] [file_end] Computing counts for cell barcode {cellidx} ({cell})', send=verbose)
+                writerr(
+                    f'[{chunkn}] [file_end] Computing counts for cell '
+                    f'barcode {cellidx} ({cell})',
+                    send=verbose
+                )
                 # compute final counts of the cell
-                ec_log, counts = cellCount(maps, intcount=intcount, dumpec=dumpec)
+                ec_log, counts = cellCount(
+                    maps,
+                    intcount=intcount,
+                    dumpec=dumpec
+                )
                 # arrange counts in a data frame and write to text file
-                lines = [ f'{features[k]} {str(cellidx)} {str(v)}\n'.encode() \
-                        for k, v in counts.items() ]
+                lines = [f'{features[k]} {str(cellidx)} {str(v)}\n'.encode() \
+                         for k, v in counts.items()]
                 mtxFile.writelines(lines)
                 if dumpec:
-                    ec_log = [f'{str(cellidx)}\t{cell}\t{x}'.encode() for x in ec_log]
+                    ec_log = [f'{str(cellidx)}\t{cell}\t{x}'.encode() \
+                              for x in ec_log]
                     ecdump.writelines(ec_log)
         if dumpec:
             ecdump.close()
-            writerr(f'Equivalence Classes dump file written to {ec_dump_file}', send=verbose)
+            writerr(
+                f'Equivalence Classes dump file written to {ec_dump_file}',
+                send=verbose
+            )
     writerr(f'Barcodes chunk {chunkn} written to {matrix_file}', send=verbose)
     return matrix_file, ec_dump_file
 
@@ -274,7 +358,7 @@ def count(mappings_file, outdir, tmpdir, features, intcount, dumpec, verbose, bc
 def formatMM(matrix_files, outdir, features, barcodes):
     if type(matrix_files) is str:
         matrix_files = [matrix_files]
-    matrix_out = outdir + '/matrix.mtx.gz'
+    matrix_out = os.path.join(outdir, 'matrix.mtx.gz')
     features_count = len(features)
     barcodes_count = len(flatten([j for i,j in barcodes]))
     mmsize = sum(getlen(f) for f in matrix_files)
@@ -291,7 +375,7 @@ def formatMM(matrix_files, outdir, features, barcodes):
 def writeEC(ecdump_files, outdir):
     if type(ecdump_files) is str:
         ecdump_files = [ecdump_files]
-    ecdump_out = outdir + '/ec_dump.tsv.gz'
+    ecdump_out = os.path.join(outdir, 'ec_dump.tsv.gz')
     ecdumpstr = ' '.join(ecdump_files)
     header = '\t'.join([
         'BC_index',
