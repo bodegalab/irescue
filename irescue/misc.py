@@ -51,16 +51,18 @@ def check_arguments(args):
             else:
                 min_overlap = int(min_overlap)
         elif isinstance(min_overlap, float) and not 0 < min_overlap <= 1:
-            raise ValueError(
+            writerr(
                 'Read length proportion must be greater than 0.00'
-                ' and up to 1.00'
+                ' and up to 1.00',
+                error=True
             )
         elif isinstance(min_overlap, int):
             pass
         else:
-            raise ValueError(
+            writerr(
                 '--min-overlap must be an integer or a floating point number'
-                ' greater than 0.00 and up to 1.00'
+                ' greater than 0.00 and up to 1.00',
+                error=True
             )
         writerr(
             'Selecting reads-TE alignments'
