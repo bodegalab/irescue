@@ -15,51 +15,51 @@ from shutil import rmtree
 def parseArguments():
     parser = argparse.ArgumentParser(
         prog='IRescue',
-        usage='irescue -b <file.bam>'
-            ' [-g GENOME_ASSEMBLY | -r BED_FILE] [OPTIONS]',
-        description='IRescue (Interspersed Repeats single-cell quantifier):'
-            ' a tool for quantifying transposable elements expression'
-            ' in scRNA-seq.',
-        epilog='Home page: https://github.com/bodegalab/irescue'
+        usage="irescue -b <file.bam>"
+            " [-g GENOME_ASSEMBLY | -r BED_FILE] [OPTIONS]",
+        description="IRescue (Interspersed Repeats single-cell quantifier):"
+            " a tool for quantifying transposable elements expression"
+            " in scRNA-seq.",
+        epilog="Home page: https://github.com/bodegalab/irescue"
     )
     parser.add_argument('-b', '--bam',
                         required=True,
                         metavar='FILE',
-                        help='scRNA-seq reads aligned to a reference genome '
-                        '(required).')
+                        help="scRNA-seq reads aligned to a reference genome "
+                        "(required).")
     parser.add_argument('-r', '--regions',
                         metavar='FILE',
-                        help='Genomic TE coordinates in bed format. '
-                        'Takes priority over --genome (default: %(default)s).')
+                        help="Genomic TE coordinates in bed format. "
+                        "Takes priority over --genome (default: %(default)s).")
     parser.add_argument('-g', '--genome',
                         metavar='STR',
-                        help='Genome assembly symbol. One of: {} (default: '
-                        '%(default)s).'.format(', '.join(__genomes__)))
+                        help="Genome assembly symbol. One of: {} (default: "
+                        "%(default)s).".format(', '.join(__genomes__)))
+    parser.add_argument('-w', '--whitelist',
+                        metavar='FILE',
+                        help="Text file of filtered cell barcodes by e.g. "
+                        "Cell Ranger, STARSolo or your gene expression "
+                        "quantifier of choice (Recommended. "
+                        "default: %(default)s).")
+    parser.add_argument('-cb', '--CBtag',
+                        default='CB',
+                        metavar='STR',
+                        help="BAM tag containing the cell barcode sequence "
+                        "(default: %(default)s).")
+    parser.add_argument('-umi', '--UMItag',
+                        default='UR',
+                        metavar='STR',
+                        help="BAM tag containing the UMI sequence "
+                        "(default: %(default)s).")
     parser.add_argument('-p', '--threads',
                         type=int,
                         default=1,
                         metavar='CPUS <int>',
-                        help='Number of cpus to use (default: %(default)s).')
-    parser.add_argument('-w', '--whitelist',
-                        metavar='FILE',
-                        help='Text file of filtered cell barcodes by e.g. '
-                        'Cell Ranger, STARSolo or your gene expression '
-                        'quantifier of choice (Recommended. '
-                        'default: %(default)s).')
-    parser.add_argument('-cb', '--CBtag',
-                        default='CB',
-                        metavar='STR',
-                        help='BAM tag containing the cell barcode sequence '
-                        '(default: %(default)s).')
-    parser.add_argument('-umi', '--UMItag',
-                        default='UR',
-                        metavar='STR',
-                        help='BAM tag containing the UMI sequence '
-                        '(default: %(default)s).')
+                        help="Number of cpus to use (default: %(default)s).")
     parser.add_argument('-o', '--outdir',
                         default='IRescue_out',
                         metavar='DIR',
-                        help='Output directory name (default: %(default)s).')
+                        help="Output directory name (default: %(default)s).")
     parser.add_argument('--min-bp-overlap',
                         type=int,
                         metavar='INT',
@@ -71,22 +71,14 @@ def parseArguments():
                         help="Minimum overlap between read and TE"
                         " as a fraction of read's alignment"
                         " (i.e. 0.00 <= NUM <= 1.00) (Default: disabled).")
-    parser.add_argument('--integers',
-                        action='store_true',
-                        help='Use if integers count are needed for '
-                        'downstream analysis.')
-    parser.add_argument('--tmpdir',
-                        default='IRescue_tmp',
-                        metavar='DIR',
-                        help='Directory to store temporary files '
-                        '(default: %(default)s).')
     parser.add_argument('--dumpEC',
                         action='store_true',
-                        help='Write a description log file of Equivalence '
-                        'Classes.')
-    parser.add_argument('--keeptmp',
+                        help="Write a description log file of Equivalence "
+                        "Classes.")
+    parser.add_argument('--integers',
                         action='store_true',
-                        help='Keep temporary files.')
+                        help="Use if integers count are needed for "
+                        "downstream analysis.")
     parser.add_argument('--samtools',
                         default='samtools',
                         metavar='PATH',
@@ -99,13 +91,21 @@ def parseArguments():
                         "PATH (Default: %(default)s).")
     parser.add_argument('--no-tags-check',
                         action='store_true',
-                        help='Suppress checking for CBtag and UMItag '
-                        'presence in bam file.')
+                        help="Suppress checking for CBtag and UMItag "
+                        "presence in bam file.")
+    parser.add_argument('--keeptmp',
+                        action='store_true',
+                        help="Keep temporary files.")
+    parser.add_argument('--tmpdir',
+                        default='IRescue_tmp',
+                        metavar='DIR',
+                        help="Directory to store temporary files "
+                        "(default: %(default)s).")
     parser.add_argument('-v', '--verbose',
                         action='store_true',
-                        help='Writes a lot of stuff to stderr, such as '
-                        'chromosomes as they are mapped and cell barcodes '
-                        'as they are processed.')
+                        help="Writes a lot of stuff to stderr, such as "
+                        "chromosomes as they are mapped and cell barcodes "
+                        "as they are processed.")
     parser.add_argument('-V', '--version',
                         action='version',
                         version='%(prog)s {}'.format(__version__),
