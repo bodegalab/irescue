@@ -194,6 +194,16 @@ def split_int(num, div):
 def split_bc(barcode_file, n):
     """
     Yields barcodes (index,sequence) tuples in n chunks.
+
+    Params
+    ------
+    barcode_file : str
+    n : int
+
+    Yields
+    -------
+    item : tuple
+        (chunk_number <int>, [barcode_sequence <str>, barcode_index <int>])
     """
     bclen = getlen(barcode_file)
     #split = round(bclen/n)
