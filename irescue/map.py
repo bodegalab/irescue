@@ -223,27 +223,22 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
     return isecFile
 
 # Concatenate and sort data obtained from isec()
-#TODO: already split mappings_file into chunks according to used cpus
-def chrcat(filesList, threads, outdir, tmpdir, verbose):
+def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
     os.makedirs(outdir, exist_ok=True)
     mappings_file = os.path.join(tmpdir, 'cb_umi_te.bed.gz')
     barcodes_file = os.path.join(outdir, 'barcodes.tsv.gz')
     features_file = os.path.join(outdir, 'features.tsv.gz')
     bedFiles = ' '.join(filesList)
-    
+
     cmd0 = f'zcat {bedFiles} '
     cmd0 += f' | LC_ALL=C sort --parallel {threads} --buffer-size 2G -u '
+    cmd0 += f' | {bedtools} groupby -g 1,2,3 -c 4 -o distinct '
     cmd0 += f' | gzip > {mappings_file} '
-    
+
     cmd1 = f'zcat {mappings_file} | cut -f1 | uniq | gzip > {barcodes_file} '
-    
+
     cmd2 = f'zcat {mappings_file} '
-    cmd2 += ' | gawk \'!x[$4]++ { '
-    #cmd2 += ' split($3,feature,"~"); '
-    # avoid subfamilies with the same name
-    #cmd2 += ' if(a[1] in sf) { sf[a[1]]+=1 } else { sf[a[1]] }; '
-    #cmd2 += ' if(length(a)<2) { a[2]=a[1] }; '
-    #cmd2 += ' print a[1] sf[a[1]] "\\t" a[2] "\\tGene Expression" '
+    cmd2 += ' | cut -f4 | sed \'s/,/\\n/g\' | gawk \'!x[$4]++ { '
     cmd2 += ' print gensub(/#.+/,"",1,$4)"\\t"$4"\\tGene Expression" }\' '
     cmd2 += f' | LC_ALL=C sort -u | gzip > {features_file} '
 
