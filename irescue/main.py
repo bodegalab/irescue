@@ -6,7 +6,7 @@ from irescue.misc import writerr, versiontuple, run_shell_cmd
 from irescue.misc import check_requirement, check_arguments, check_tags
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat
 from irescue.map import checkIndex
-from irescue.count import split_bc, parse_features, count, formatMM, writeEC
+from irescue.count import split_barcodes, index_features, run_count, formatMM
 import argparse, os
 from multiprocessing import Pool
 from functools import partial
@@ -118,6 +118,11 @@ def main():
     args = parser.parse_args()
     args = check_arguments(args)
 
+
+    ####################
+    # Preliminar steps #
+    ####################
+
     # Check requirements
     check_requirement(
         args.bedtools, '2.30.0',
@@ -139,9 +144,12 @@ def main():
 
     # Check for bam index file. If not present, will build an index.
     checkIndex(args.bam, verbose=args.verbose)
-    
-    writerr('IRescue job starts')
-    
+
+
+    ###########
+    # Mapping #
+    ###########
+
     # create directories
     os.makedirs(args.tmpdir, exist_ok=True)
     os.makedirs(args.outdir, exist_ok=True)
@@ -183,16 +191,20 @@ def main():
         tmpdir=args.tmpdir, verbose=args.verbose
     )
 
+
+    #########
+    # Count #
+    #########
+
     # calculate number of mappings per process
-    bc_per_thread = list(split_bc(barcodes_file, args.threads))
+    bc_per_thread = list(split_barcodes(barcodes_file, args.threads))
 
     # parse features
-    ftlist = dict(parse_features(features_file))
+    feature_index = dict(index_features(features_file))
 
     # calculate TE counts
     countFun = partial(
-        count, mappings_file, args.outdir, args.tmpdir, ftlist, args.integers,
-        args.dumpEC, args.verbose
+        run_count, mappings_file, feature_index, args.tmpdir, args.verbose
     )
     if args.threads > 1:
         mtxFiles = pool.map(countFun, bc_per_thread)
@@ -208,13 +220,12 @@ def main():
     matrix_files = [ i for i, j in mtxFiles]
     ecdump_files = [ j for i, j in mtxFiles]
     matrix_file = formatMM(
-        matrix_files, outdir=args.outdir, features=ftlist,
-        barcodes=bc_per_thread
+        matrix_files, feature_index, bc_per_thread, args.outdir
     )
     writerr(f'Writing sparse matrix to {matrix_file}')
-    if args.dumpEC:
-        ecdump_file = writeEC(ecdump_files, outdir=args.outdir)
-        writerr(f'Writing Equivalence Classes to {ecdump_file}')
+    #if args.dumpEC:
+    #    ecdump_file = writeEC(ecdump_files, outdir=args.outdir)
+    #    writerr(f'Writing Equivalence Classes to {ecdump_file}')
 
     if not args.keeptmp:
         writerr(f'Cleaning up temporary files.', send=args.verbose)

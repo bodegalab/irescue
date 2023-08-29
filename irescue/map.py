@@ -230,16 +230,25 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
     features_file = os.path.join(outdir, 'features.tsv.gz')
     bedFiles = ' '.join(filesList)
 
-    cmd0 = f'zcat {bedFiles} '
-    cmd0 += f' | LC_ALL=C sort --parallel {threads} --buffer-size 2G -u '
-    cmd0 += f' | {bedtools} groupby -g 1,2,3 -c 4 -o distinct '
-    cmd0 += f' | gzip > {mappings_file} '
+    # sort and summarize UMI-READ-TE mappings
+    sort_res = f'--parallel {int(threads / 2 - 1)} --buffer-size 2G'
+    cmd0 = f'zcat {bedFiles}'
+        # input: "CB UMI READ FEAT"
+    cmd0 += f' | LC_ALL=C sort -u {sort_res}'
+    cmd0 += f' | {bedtools} groupby -g 1,2,3 -c 4 -o distinct'
+        # result: "CB UMI READ FEATs"
+    cmd0 += f' | LC_ALL=C sort -k1,2 -k4,4 {sort_res}'
+    cmd0 += f' | {bedtools} groupby -g 1,2,4 -c 3 -o count_distinct'
+        # result: "CB UMI FEATs count"
+    cmd0 += f' | gzip > {mappings_file}'
 
+    # write barcodes.tsv file
     cmd1 = f'zcat {mappings_file} | cut -f1 | uniq | gzip > {barcodes_file} '
 
+    # write features.tsv file
     cmd2 = f'zcat {mappings_file} '
-    cmd2 += ' | cut -f4 | sed \'s/,/\\n/g\' | gawk \'!x[$4]++ { '
-    cmd2 += ' print gensub(/#.+/,"",1,$4)"\\t"$4"\\tGene Expression" }\' '
+    cmd2 += ' | cut -f3 | sed \'s/,/\\n/g\' | gawk \'!x[$1]++ { '
+    cmd2 += ' print gensub(/#.+/,"",1,$1)"\\t"$1"\\tGene Expression" }\' '
     cmd2 += f' | LC_ALL=C sort -u | gzip > {features_file} '
 
     writerr('Concatenating mappings', send=verbose)
