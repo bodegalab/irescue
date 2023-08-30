@@ -25,7 +25,7 @@ def connect_umis(x, y, threshold=1):
     """
     return (hdist(x[0], y[0]) <= threshold
             and x[2] >= (2 * y[2]) - 1
-            and x[1].intersection(y[1]) > 0)
+            and x[1].intersection(y[1]))
 
 def pathfinder(graph, start_node, path=[], start_ft=None):
     """
@@ -46,7 +46,7 @@ def index_features(features_file):
     idx = {}
     with gzip.open(features_file, 'rb') as f:
         for i, line in enumerate(f, start=1):
-            ft = line.strip().split('\t')[0]
+            ft = line.strip().split(b'\t')[0]
             idx[i] = ft
             idx[ft] = i
     return idx
@@ -61,11 +61,12 @@ def parse_maps(maps_file, feature_index):
     """
     with gzip.open(maps_file, 'rb') as f:
         eqcl = []
-        it = f.readline().strip().split('\t')[0]
+        it = f.readline().strip().split(b'\t')[0]
         f.seek(0)
-        for line in maps_file:
-            cb, umi, feat, count = line.strip().split('\t')
-            feat = {feature_index[ft] for ft in feat.split(',')}
+        for line in f:
+            cb, umi, feat, count = line.strip().split(b'\t')
+            count = int(count)
+            feat = {feature_index[ft] for ft in feat.split(b',')}
             if cb == it:
                 eqcl.append((umi, feat, count))
             else:
@@ -110,36 +111,49 @@ def compute_cell_counts(equivalence_classes):
         # each parent node.
         paths = {x: [] for x in parents}
         # find paths starting from each parent node
-        for parent in parents:
-            # populate this list with nodes utilized in paths
-            blacklist = []
-            # find paths in list of nodes starting from parent
-            path = []
-            for node in [parent] + [x for x in subg if x != parent]:
-                # make a copy of subgraph and remove nodes already used
-                # in a path
-                subg_copy = subg.copy()
-                [subg_copy.remove_node(x) for x in path]
-                if node not in blacklist:
-                    path = pathfinder(subg_copy, node)
-                    [blacklist.append(x) for x in path]
-                    paths[parent].append(path)
+        if parents:
+            for parent in parents:
+                # populate this list with nodes utilized in paths
+                blacklist = []
+                # find paths in list of nodes starting from parent
+                path = []
+                for node in [parent] + [x for x in subg if x != parent]:
+                    # make a copy of subgraph and remove nodes already used
+                    # in a path
+                    subg_copy = subg.copy()
+                    [subg_copy.remove_node(x) for x in path]
+                    if node not in blacklist:
+                        path = pathfinder(subg_copy, node)
+                        [blacklist.append(x) for x in path]
+                        paths[parent].append(path)
+        else:
+            paths = {x: [list(subg.nodes)] for x in subg}
+        #print('equivalence_classes', equivalence_classes)
+        #print('graph', nx.to_dict_of_lists(graph))
+        #print('subg', nx.to_dict_of_lists(subg))
+        #print('parents', parents)
+        #print('paths', paths)
         # find the path configuration leading to the minimum number of
         # deduplicated UMIs
-        path_config = [paths[k] for k, v in paths.items()
-                       if len(v) == min([len(x)for x in paths.values()])][0]
+        path_config = [
+            paths[k] for k, v in paths.items()
+            if len(v) == min([len(x) for x in paths.values()])
+        ][0]
         # assign UMI count to features
         for path in path_config:
+            #print(path_config)
+            # get list of nodes' features sets
             features_sets = [subg.nodes[x]['ft'] for x in path]
-            feat = set()
+            # find the features common to all nodes
+            feat = features_sets[0]
             for x in features_sets:
                 feat = feat.intersection(x)
+            feat = list(feat)
             if len(feat) == 1:
                 # unambiguous assignment to feature
-                counts[feat] += 1
+                counts[feat[0]] += 1
             elif len(feat) > 1:
                 # run EM to distribute count across features
-                feat = list(feat)
                 array = []
                 for node in path:
                     row = [0.0 for _ in feat]

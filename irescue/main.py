@@ -188,7 +188,7 @@ def main():
     # concatenate intersection results
     mappings_file, barcodes_file, features_file = chrcat(
         isecFiles, threads=args.threads, outdir=args.outdir,
-        tmpdir=args.tmpdir, verbose=args.verbose
+        tmpdir=args.tmpdir, bedtools=args.bedtools, verbose=args.verbose
     )
 
 
@@ -200,7 +200,7 @@ def main():
     bc_per_thread = list(split_barcodes(barcodes_file, args.threads))
 
     # parse features
-    feature_index = dict(index_features(features_file))
+    feature_index = index_features(features_file)
 
     # calculate TE counts
     countFun = partial(
@@ -217,8 +217,8 @@ def main():
         pool.join()
 
     # concatenate matrix files chunks
-    matrix_files = [ i for i, j in mtxFiles]
-    ecdump_files = [ j for i, j in mtxFiles]
+    matrix_files = [ i for i in mtxFiles]
+    #ecdump_files = [ j for i, j in mtxFiles]
     matrix_file = formatMM(
         matrix_files, feature_index, bc_per_thread, args.outdir
     )
