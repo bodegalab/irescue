@@ -250,7 +250,8 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
     # write features.tsv file
     cmd2 = f'zcat {mappings_file} '
     cmd2 += ' | cut -f3 | sed \'s/,/\\n/g\' | gawk \'!x[$1]++ { '
-    cmd2 += ' print gensub(/#.+/,"",1,$1)"\\t"$1"\\tGene Expression" }\' '
+    #cmd2 += ' print gensub(/#.+/,"",1,$1)"\\t"$1"\\tGene Expression" }\' '
+    cmd2 += ' print $1"\\t"gensub(/#.+/,"",1,$1)"\\tGene Expression" }\' '
     cmd2 += f' | LC_ALL=C sort -u | gzip > {features_file} '
 
     writerr('Concatenating mappings', send=verbose)
