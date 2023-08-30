@@ -229,9 +229,11 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
     barcodes_file = os.path.join(outdir, 'barcodes.tsv.gz')
     features_file = os.path.join(outdir, 'features.tsv.gz')
     bedFiles = ' '.join(filesList)
+    sort_threads = int(threads / 2 - 1)
+    sort_threads = sort_threads if sort_threads>0 else 1
 
     # sort and summarize UMI-READ-TE mappings
-    sort_res = f'--parallel {int(threads / 2 - 1)} --buffer-size 2G'
+    sort_res = f'--parallel {sort_threads} --buffer-size 2G'
     cmd0 = f'zcat {bedFiles}'
         # input: "CB UMI READ FEAT"
     cmd0 += f' | LC_ALL=C sort -u {sort_res}'
