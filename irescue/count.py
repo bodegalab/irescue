@@ -51,7 +51,7 @@ def index_features(features_file):
     with gzip.open(features_file, 'rb') as f:
         for i, line in enumerate(f, start=1):
             ft = line.strip().split(b'\t')[0]
-            idx[i] = ft
+        #    idx[i] = ft
             idx[ft] = i
     return idx
 
@@ -79,7 +79,7 @@ def parse_maps(maps_file, feature_index):
                 eqcl = [(umi, feat, count)]
         yield it, eqcl
 
-def compute_cell_counts(equivalence_classes):
+def compute_cell_counts(equivalence_classes, number_of_features):
     """
     Calculate TE counts of a single cell, given a list of equivalence classes.
 
@@ -108,6 +108,8 @@ def compute_cell_counts(equivalence_classes):
     # split cell-wide graph into subgraphs of connected nodes
     subgraphs = [graph.subgraph(x) for x in
                  nx.connected_components(graph.to_undirected())]
+    # put aside networks that will be solved with EM
+    em_array = []
     for subg in subgraphs:
         # find all parent nodes in graph
         parents = [x for x in subg if not list(subg.predecessors(x))]
@@ -152,18 +154,22 @@ def compute_cell_counts(equivalence_classes):
                 # unambiguous assignment to feature
                 counts[feat[0]] += 1
             elif len(feat) > 1:
+                # add UMI-TE compatibility matrix to em_array
+                row = [1 if x in feat else 0
+                       for x in range(1, number_of_features+1)]
+                em_array.append(row)
                 # run EM to distribute count across features
-                array = []
-                for node in path:
-                    row = [0.0 for _ in feat]
-                    for i, f in enumerate(feat):
-                        if f in subg.nodes[node]['ft']:
-                            row[i] = subg.nodes[node]['count']
-                    array.append(row)
-                array = np.array(array)
-                abundances = run_em(array, cycles=100)
-                for i, f in enumerate(feat):
-                    counts[f] += abundances[i]
+                #array = []
+                #for node in path:
+                #    row = [0.0 for _ in feat]
+                #    for i, f in enumerate(feat):
+                #        if f in subg.nodes[node]['ft']:
+                #            row[i] = subg.nodes[node]['count']
+                #    array.append(row)
+                #array = np.array(array)
+                #abundances = run_em(array, cycles=100)
+                #for i, f in enumerate(feat):
+                #    counts[f] += abundances[i]
             else:
                 print(nx.to_dict_of_lists(subg))
                 print([subg.nodes[x]['ft'] for x in subg.nodes])
@@ -174,6 +180,12 @@ def compute_cell_counts(equivalence_classes):
                 print(feat)
                 writerr("Error: no common features detected in subgraph's"
                         " path.", error=True)
+    # run EM to optimize the assignment of UMI from multimapping reads
+    em_array = np.array(em_array)
+    em_counts = run_em(em_array, cycles=100)
+    em_counts *= em_array.shape[1]
+    for i, c in enumerate(em_counts, start=1):
+        counts[i] += c
     return dict(counts)
 
 def split_barcodes(barcodes_file, n):
@@ -196,7 +208,10 @@ def run_count(maps_file, feature_index, tmpdir, verbose, barcodes_set):
             if cellbarcode not in barcodes:
                 continue
             cellidx = barcodes[cellbarcode]
-            cellcounts = compute_cell_counts(equivalence_classes=cellmaps)
+            cellcounts = compute_cell_counts(
+                equivalence_classes=cellmaps,
+                number_of_features=len(feature_index)
+            )
             lines = [f'{feature} {cellidx} {count}\n'.encode()
                      for feature, count in cellcounts.items()]
             f.writelines(lines)
