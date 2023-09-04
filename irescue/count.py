@@ -27,23 +27,18 @@ def connect_umis(x, y, threshold=1):
             and x[2] >= (2 * y[2]) - 1
             and x[1].intersection(y[1]))
 
-def pathfinder(graph, start_node, path=[], start_ft=None):
+def pathfinder(graph, node, path=[], features=None):
     """
     Finds first valid path of UMIs with compatible equivalence class given
     a starting node. Can be used iteratively to find all possible paths.
     """
-    if not start_ft:
-        start_ft = graph.nodes[start_node]['ft']
-    else:
-        start_ft = start_ft.intersection(graph.nodes[start_node]['ft'])
-        if not start_ft:
-            return path
-    path = path + [start_node]
-    for node in graph.successors(start_node):
-        if start_ft.intersection(graph.nodes[node]['ft']) and node not in path:
-            extended_path = pathfinder(graph, node, path, start_ft)
-            if extended_path:
-                return extended_path
+    if not features:
+        features = graph.nodes[node]['ft']
+    path += [node]
+    for next_node in graph.successors(node):
+        if (features.intersection(graph.nodes[next_node]['ft'])
+            and next_node not in path):
+            path = pathfinder(graph, next_node, path, features)
     return path
 
 def index_features(features_file):
@@ -51,7 +46,6 @@ def index_features(features_file):
     with gzip.open(features_file, 'rb') as f:
         for i, line in enumerate(f, start=1):
             ft = line.strip().split(b'\t')[0]
-        #    idx[i] = ft
             idx[ft] = i
     return idx
 
@@ -101,7 +95,6 @@ def compute_cell_counts(equivalence_classes, number_of_features):
     for i, eqc1 in enumerate(equivalence_classes):
         graph.add_node(i)
         graph.nodes[i]['ft'] = eqc1[1]
-        graph.nodes[i]['count'] = float(eqc1[2])
         for j, eqc2 in enumerate(equivalence_classes):
             if i != j and connect_umis(eqc1, eqc2):
                 graph.add_edge(i, j)
@@ -115,7 +108,11 @@ def compute_cell_counts(equivalence_classes, number_of_features):
         parents = [x for x in subg if not list(subg.predecessors(x))]
         if not parents:
             # if no parents are found due to bidirected edges, take all nodes
-            parents=list(subg.nodes)
+            # and the union of all features
+            parents = list(subg.nodes)
+            features = [list(set.union(*[subg.nodes[x]['ft'] for x in subg]))]
+        else:
+            features = None
         # initialize dict of possible paths configurations, starting from
         # each parent node.
         paths = {x: [] for x in parents}
@@ -131,45 +128,27 @@ def compute_cell_counts(equivalence_classes, number_of_features):
                 # make a copy of subgraph and remove nodes already used
                 # in a path
                 if node not in blacklist:
-                    path = pathfinder(subg_copy, node)
-                    [blacklist.append(x) for x in path]
+                    path = pathfinder(subg_copy, node, path=[], features=None)
+                    for x in path:
+                        blacklist.append(x)
+                        subg_copy.remove_node(x)
                     paths[parent].append(path)
-                    [subg_copy.remove_node(x) for x in path]
         # find the path configuration leading to the minimum number of
         # deduplicated UMIs
         path_config = [
             paths[k] for k, v in paths.items()
             if len(v) == min([len(x) for x in paths.values()])
         ][0]
+        if not features:
+            features = [list(subg.nodes[x[0]]['ft']) for x in path_config]
         # assign UMI count to features
-        for path in path_config:
-            # get list of nodes' features sets
-            features_sets = [subg.nodes[x]['ft'] for x in path]
-            # find the features common to all nodes
-            feat = features_sets[0]
-            for x in features_sets:
-                feat = feat.intersection(x)
-            feat = list(feat)
-            if len(feat) == 1:
-                # unambiguous assignment to feature
-                counts[feat[0]] += 1
-            elif len(feat) > 1:
-                # add UMI-TE compatibility matrix to em_array
-                row = [1 if x in feat else 0
+        for feats in features:
+            if len(feats) == 1:
+                counts[feats[0]] += 1
+            elif len(feats) > 1:
+                row = [1 if x in feats else 0
                        for x in range(1, number_of_features+1)]
                 em_array.append(row)
-                # run EM to distribute count across features
-                #array = []
-                #for node in path:
-                #    row = [0.0 for _ in feat]
-                #    for i, f in enumerate(feat):
-                #        if f in subg.nodes[node]['ft']:
-                #            row[i] = subg.nodes[node]['count']
-                #    array.append(row)
-                #array = np.array(array)
-                #abundances = run_em(array, cycles=100)
-                #for i, f in enumerate(feat):
-                #    counts[f] += abundances[i]
             else:
                 print(nx.to_dict_of_lists(subg))
                 print([subg.nodes[x]['ft'] for x in subg.nodes])
@@ -180,12 +159,20 @@ def compute_cell_counts(equivalence_classes, number_of_features):
                 print(feat)
                 writerr("Error: no common features detected in subgraph's"
                         " path.", error=True)
-    # run EM to optimize the assignment of UMI from multimapping reads
-    em_array = np.array(em_array)
-    em_counts = run_em(em_array, cycles=100)
-    em_counts *= em_array.shape[1]
-    for i, c in enumerate(em_counts, start=1):
-        counts[i] += c
+    if em_array:
+        # optimize the assignment of UMI from multimapping reads
+        em_array = np.array(em_array)
+        # save an array with features > 0, as in em_array order
+        tokeep = np.argwhere(np.all(em_array[..., :] > 0, axis=0))[:,0] + 1
+        # remove unmapped features from em_array
+        todel = np.argwhere(np.all(em_array[..., :] == 0, axis=0))
+        em_array = np.delete(em_array, todel, axis=1)
+        # run EM
+        em_counts = run_em(em_array, cycles=100)
+        em_counts = [x*em_array.shape[0] for x in em_counts]
+        for i, c in zip(tokeep, em_counts):
+            if c>0:
+                counts[i] += c
     return dict(counts)
 
 def split_barcodes(barcodes_file, n):
