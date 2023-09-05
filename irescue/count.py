@@ -155,8 +155,8 @@ def compute_cell_counts(equivalence_classes, number_of_features):
                 print([subg.nodes[x]['count'] for x in subg.nodes])
                 print(path_config)
                 print(path)
-                print(features_sets)
-                print(feat)
+                print(features)
+                print(feats)
                 writerr("Error: no common features detected in subgraph's"
                         " path.", error=True)
     if em_array:
