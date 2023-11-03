@@ -144,7 +144,7 @@ def compute_cell_counts(equivalence_classes, number_of_features):
         # assign UMI count to features
         for feats in features:
             if len(feats) == 1:
-                counts[feats[0]] += 1
+                counts[feats[0]] += 1.0
             elif len(feats) > 1:
                 row = [1 if x in feats else 0
                        for x in range(1, number_of_features+1)]
