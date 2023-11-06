@@ -163,7 +163,7 @@ def compute_cell_counts(equivalence_classes, number_of_features):
         # optimize the assignment of UMI from multimapping reads
         em_array = np.array(em_array)
         # save an array with features > 0, as in em_array order
-        tokeep = np.argwhere(np.all(em_array[..., :] > 0, axis=0))[:,0] + 1
+        tokeep = np.argwhere(np.any(em_array[..., :] > 0, axis=0))[:,0] + 1
         # remove unmapped features from em_array
         todel = np.argwhere(np.all(em_array[..., :] == 0, axis=0))
         em_array = np.delete(em_array, todel, axis=1)
@@ -171,7 +171,7 @@ def compute_cell_counts(equivalence_classes, number_of_features):
         em_counts = run_em(em_array, cycles=100)
         em_counts = [x*em_array.shape[0] for x in em_counts]
         for i, c in zip(tokeep, em_counts):
-            if c>0:
+            if c > 0:
                 counts[i] += c
     return dict(counts)
 
