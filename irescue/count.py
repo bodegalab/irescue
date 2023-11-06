@@ -199,8 +199,9 @@ def run_count(maps_file, feature_index, tmpdir, verbose, barcodes_set):
                 equivalence_classes=cellmaps,
                 number_of_features=len(feature_index)
             )
-            lines = [f'{feature} {cellidx} {count}\n'.encode()
-                     for feature, count in cellcounts.items()]
+            lines = [f'{feature} {cellidx} {round(count, 3)}\n'.encode()
+                     for feature, count in cellcounts.items()
+                     if count >= 0.001]
             f.writelines(lines)
     return matrix_file
 
