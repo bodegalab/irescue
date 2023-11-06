@@ -101,7 +101,7 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
                 if famclass.split('/')[0] in fams_to_skip:
                     continue
                 # concatenate family and class with subfamily
-                subfamily += '~' + famclass
+                subfamily += '#' + famclass
                 score = lst[0]
                 chr, start, end = lst[4:7]
                 # make coordinates 0-based
