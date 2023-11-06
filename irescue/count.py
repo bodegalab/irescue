@@ -210,7 +210,7 @@ def formatMM(matrix_files, feature_index, barcodes_chunks, outdir):
     if type(matrix_files) is str:
         matrix_files = [matrix_files]
     matrix_out = os.path.join(outdir, 'matrix.mtx.gz')
-    features_count = sum(1 for _ in feature_index if type(_) is int)
+    features_count = len(feature_index)
     barcodes_count = sum(len(x) for _, x in barcodes_chunks)
     mmsize = sum(getlen(f) for f in matrix_files)
     mmheader = b'%%MatrixMarket matrix coordinate real general\n'
