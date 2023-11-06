@@ -150,13 +150,13 @@ def compute_cell_counts(equivalence_classes, number_of_features):
                        for x in range(1, number_of_features+1)]
                 em_array.append(row)
             else:
-                print(nx.to_dict_of_lists(subg))
-                print([subg.nodes[x]['ft'] for x in subg.nodes])
-                print([subg.nodes[x]['count'] for x in subg.nodes])
-                print(path_config)
-                print(path)
-                print(features)
-                print(feats)
+                writerr(nx.to_dict_of_lists(subg))
+                writerr([subg.nodes[x]['ft'] for x in subg.nodes])
+                writerr([subg.nodes[x]['count'] for x in subg.nodes])
+                writerr(path_config)
+                writerr(path)
+                writerr(features)
+                writerr(feats)
                 writerr("Error: no common features detected in subgraph's"
                         " path.", error=True)
     if em_array:
@@ -195,6 +195,7 @@ def run_count(maps_file, feature_index, tmpdir, verbose, barcodes_set):
             if cellbarcode not in barcodes:
                 continue
             cellidx = barcodes[cellbarcode]
+            writerr(f'Run count for cell {cellidx} - {cellbarcode}')
             cellcounts = compute_cell_counts(
                 equivalence_classes=cellmaps,
                 number_of_features=len(feature_index)
