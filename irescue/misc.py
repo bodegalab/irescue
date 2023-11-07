@@ -235,3 +235,16 @@ def iupac_nt_code(nts):
     }
     out = [k for k, v in codes.items() if v == set(nts)][0]
     return out
+
+def get_ranges(num, div):
+    """
+    Splits an integer X into N integers whose sum is equal to X.
+    """
+    split = int(num/div)
+    for i in range(0, num, split):
+        j = i + split
+        if j > num-split:
+            j = num
+            yield range(i, j)
+            break
+        yield range(i, j)
