@@ -3,7 +3,7 @@
 from collections import Counter
 import numpy as np
 import networkx as nx
-from irescue.misc import get_ranges, getlen, writerr, flatten, run_shell_cmd, iupac_nt_code
+from irescue.misc import get_ranges, getlen, writerr, run_shell_cmd
 from irescue.em import run_em
 import gzip
 import os
@@ -53,7 +53,7 @@ def parse_maps(maps_file, feature_index):
     """
     maps_file : str
         Content: "CB UMI FEATs count"
-    out : str, list
+    out : bytes, list
         CB,
         [(UMI <str>, {FT <int>, ...} <set>, count <int>) <tuple>, ...]
     """
@@ -73,7 +73,7 @@ def parse_maps(maps_file, feature_index):
                 eqcl = [(umi, feat, count)]
         yield it, eqcl
 
-def compute_cell_counts(equivalence_classes, number_of_features):
+def compute_cell_counts(equivalence_classes, features_index, dumpEC):
     """
     Calculate TE counts of a single cell, given a list of equivalence classes.
 
@@ -88,8 +88,12 @@ def compute_cell_counts(equivalence_classes, number_of_features):
     out : dict
         feature <int>: count <float> dictionary.
     """
-    # initialize TE counts
+    # initialize TE counts and dedup log
     counts = Counter()
+    dump = {}
+    number_of_features = len(features_index)
+    # make inverted dictionary for writing EqC dump file
+    findex = dict(zip(features_index.values(), features_index.keys()))
     # build cell-wide UMI deduplication graph
     graph = nx.DiGraph()
     for i, eqc1 in enumerate(equivalence_classes):
@@ -98,20 +102,25 @@ def compute_cell_counts(equivalence_classes, number_of_features):
         for j, eqc2 in enumerate(equivalence_classes):
             if i != j and connect_umis(eqc1, eqc2):
                 graph.add_edge(i, j)
+        if dumpEC:
+            fnames = b','.join([findex[f] for f in eqc1[1]])
+            dump[i] = [eqc1[0], fnames, str(eqc1[2]).encode()]
     # split cell-wide graph into subgraphs of connected nodes
     subgraphs = [graph.subgraph(x) for x in
                  nx.connected_components(graph.to_undirected())]
     # put aside networks that will be solved with EM
     em_array = []
+    # solve UMI deduplication for each subgraph of connected nodes
     for subg in subgraphs:
         # find all parent nodes in graph
         parents = [x for x in subg if not list(subg.predecessors(x))]
         if not parents:
             # if no parents are found due to bidirected edges, take all nodes
-            # and the union of all features
+            # and the union of all features (i.e. all nodes are parents).
             parents = list(subg.nodes)
             features = [list(set.union(*[subg.nodes[x]['ft'] for x in subg]))]
         else:
+            # if parents node are found, features will be determined below.
             features = None
         # initialize dict of possible paths configurations, starting from
         # each parent node.
@@ -134,12 +143,13 @@ def compute_cell_counts(equivalence_classes, number_of_features):
                         subg_copy.remove_node(x)
                     paths[parent].append(path)
         # find the path configuration leading to the minimum number of
-        # deduplicated UMIs
+        # deduplicated UMIs -> list of lists of nodes
         path_config = [
             paths[k] for k, v in paths.items()
             if len(v) == min([len(x) for x in paths.values()])
         ][0]
         if not features:
+            # take features from parent node of selected path configuration
             features = [list(subg.nodes[x[0]]['ft']) for x in path_config]
         # assign UMI count to features
         for feats in features:
@@ -159,6 +169,20 @@ def compute_cell_counts(equivalence_classes, number_of_features):
                 writerr(feats)
                 writerr("Error: no common features detected in subgraph's"
                         " path.", error=True)
+        # add EC log to dump
+        if dumpEC:
+            for i, path_ in enumerate(path_config):
+                # add empty fields to parent node
+                parent_ = path_[0]
+                path_.pop(0)
+                dump[parent_] += [b'', b'']
+                # if child nodes are present, add parent node informations
+                for x in path_:
+                    # add parent UMI sequence
+                    dump[x].append(dump[parent_][0])
+                    # add features
+                    fnames = [findex[f] for f in features[i]]
+                    dump[x].append(b','.join(fnames))
     if em_array:
         # optimize the assignment of UMI from multimapping reads
         em_array = np.array(em_array)
@@ -173,7 +197,7 @@ def compute_cell_counts(equivalence_classes, number_of_features):
         for i, c in zip(tokeep, em_counts):
             if c > 0:
                 counts[i] += c
-    return dict(counts)
+    return dict(counts), dump
 
 def split_barcodes(barcodes_file, n):
     """
@@ -187,24 +211,36 @@ def split_barcodes(barcodes_file, n):
         for i, chunk in enumerate(get_ranges(nBarcodes, n)):
             yield i, {next(f).strip(): x+1 for x in chunk}
 
-def run_count(maps_file, feature_index, tmpdir, verbose, barcodes_set):
+def run_count(maps_file, feature_index, tmpdir, dumpEC, verbose, barcodes_set):
+    # NB: keep args order consistent with main.countFun
     taskn, barcodes = barcodes_set
     matrix_file = os.path.join(tmpdir, f'{taskn}_matrix.mtx.gz')
+    dump_file = os.path.join(tmpdir, f'{taskn}_EqCdump.tsv.gz')
     with gzip.open(matrix_file, 'wb') as f:
         for cellbarcode, cellmaps in parse_maps(maps_file, feature_index):
             if cellbarcode not in barcodes:
                 continue
             cellidx = barcodes[cellbarcode]
             writerr(f'Run count for cell {cellidx} - {cellbarcode}')
-            cellcounts = compute_cell_counts(
+            cellcounts, dump = compute_cell_counts(
                 equivalence_classes=cellmaps,
-                number_of_features=len(feature_index)
+                features_index=feature_index,
+                dumpEC=dumpEC
             )
+            # round counts to 3rd decimal point and write to matrix file
+            # only if count is at least 0.001
             lines = [f'{feature} {cellidx} {round(count, 3)}\n'.encode()
                      for feature, count in cellcounts.items()
                      if count >= 0.001]
             f.writelines(lines)
-    return matrix_file
+            if dump:
+                # append EqC log to dump file
+                with gzip.open(dump_file, 'ab') as df:
+                    dumpbc = [str(cellidx).encode(), cellbarcode]
+                    dumplines = [b'\t'.join(dumpbc + v + [b'\n'])
+                                 for k, v in dump.items()]
+                    df.writelines(dumplines)
+    return matrix_file, dump_file
 
 def formatMM(matrix_files, feature_index, barcodes_chunks, outdir):
     if type(matrix_files) is str:
@@ -222,3 +258,23 @@ def formatMM(matrix_files, feature_index, barcodes_chunks, outdir):
     cmd = f'zcat {mtxstr} | LC_ALL=C sort -k2,2n -k1,1n | gzip >> {matrix_out}'
     run_shell_cmd(cmd)
     return(matrix_out)
+
+def writeEC(ecdump_files, outdir):
+    if type(ecdump_files) is str:
+        ecdump_files = [ecdump_files]
+    ecdump_out = os.path.join(outdir, 'ec_dump.tsv.gz')
+    ecdumpstr = ' '.join(ecdump_files)
+    header = '\t'.join([
+        'BC_index',
+        'Barcode',
+        'UMI',
+        'Features',
+        'Read_count',
+        'Dedup_UMI',
+        'Dedup_feature'
+    ]) + '\n'
+    with gzip.GzipFile(ecdump_out, 'wb', mtime=0) as f:
+        f.write(header.encode())
+    cmd = f'zcat {ecdumpstr} | LC_ALL=C sort -k1,1n -k2 | gzip >> {ecdump_out}'
+    run_shell_cmd(cmd)
+    return ecdump_out

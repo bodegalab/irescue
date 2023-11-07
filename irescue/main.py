@@ -6,7 +6,7 @@ from irescue.misc import writerr, versiontuple, run_shell_cmd
 from irescue.misc import check_requirement, check_arguments, check_tags
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat
 from irescue.map import checkIndex
-from irescue.count import split_barcodes, index_features, run_count, formatMM
+from irescue.count import split_barcodes, index_features, run_count, formatMM, writeEC
 import argparse, os
 from multiprocessing import Pool
 from functools import partial
@@ -204,7 +204,7 @@ def main():
 
     # calculate TE counts
     countFun = partial(
-        run_count, mappings_file, feature_index, args.tmpdir, args.verbose
+        run_count, mappings_file, feature_index, args.tmpdir, args.dumpEC, args.verbose
     )
     if args.threads > 1:
         mtxFiles = pool.map(countFun, bc_per_thread)
@@ -217,15 +217,15 @@ def main():
         pool.join()
 
     # concatenate matrix files chunks
-    matrix_files = [ i for i in mtxFiles]
-    #ecdump_files = [ j for i, j in mtxFiles]
+    matrix_files = [ i for i, j in mtxFiles]
+    ecdump_files = [ j for i, j in mtxFiles]
     matrix_file = formatMM(
         matrix_files, feature_index, bc_per_thread, args.outdir
     )
     writerr(f'Writing sparse matrix to {matrix_file}')
-    #if args.dumpEC:
-    #    ecdump_file = writeEC(ecdump_files, outdir=args.outdir)
-    #    writerr(f'Writing Equivalence Classes to {ecdump_file}')
+    if args.dumpEC:
+        ecdump_file = writeEC(ecdump_files, outdir=args.outdir)
+        writerr(f'Writing Equivalence Classes to {ecdump_file}')
 
     if not args.keeptmp:
         writerr(f'Cleaning up temporary files.', send=args.verbose)
