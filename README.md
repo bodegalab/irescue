@@ -34,7 +34,7 @@ conda create -n irescue -c conda-forge -c bioconda irescue
 
 ### <a name="pip"></a>Using pip
 
-If for any reason it's not possible or desiderable to use conda, it can be installed with pip and the following requirements must be installed manually: `python>=3.7`, `samtools>=1.12`, `bedtools>=2.30.0`, and fairly recent versions of the GNU utilities are required, specifically `coreutils>=8.30` and `gzip>=1.10` (older versions are untested).
+If for any reason it's not possible or desiderable to use conda, it can be installed with pip and the following requirements must be installed manually: `python>=3.7`, `samtools>=1.12`, `bedtools>=2.30.0`, and fairly recent versions of the GNU utilities are required, specifically `gawk>=5.0.1`, `coreutils>=8.30` and `gzip>=1.10` (older versions are untested).
 
 ```bash
 pip install irescue
