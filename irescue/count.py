@@ -103,6 +103,7 @@ def compute_cell_counts(equivalence_classes, features_index, dumpEC):
             if i != j and connect_umis(eqc1, eqc2):
                 graph.add_edge(i, j)
         if dumpEC:
+            # populate dump dictionary { i: ["UMI", "features", "count"] }
             fnames = b','.join([findex[f] for f in eqc1[1]])
             dump[i] = [eqc1[0], fnames, str(eqc1[2]).encode()]
     # split cell-wide graph into subgraphs of connected nodes
