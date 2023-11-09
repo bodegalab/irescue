@@ -117,7 +117,7 @@ def parseArguments():
 
 def main():
     parser = parseArguments()
-    args = parser.parse_args()
+    args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
     #args = check_arguments(args)
 
 
