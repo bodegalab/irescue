@@ -222,7 +222,8 @@ def run_count(maps_file, feature_index, tmpdir, dumpEC, verbose, barcodes_set):
             if cellbarcode not in barcodes:
                 continue
             cellidx = barcodes[cellbarcode]
-            writerr(f'Run count for cell {cellidx} ({cellbarcode.decode()})')
+            writerr(f'Run count for cell {cellidx} ({cellbarcode.decode()})',
+                    send=verbose)
             cellcounts, dump = compute_cell_counts(
                 equivalence_classes=cellmaps,
                 features_index=feature_index,
