@@ -116,10 +116,14 @@ def parseArguments():
 
 
 def main():
+
+
     parser = parseArguments()
     args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
     #args = check_arguments(args)
 
+    argstr = '\n'.join(f'    {k}: {v}' for k, v in args.__dict__.items())
+    sys.stderr.write(f"    IRescue version {__version__}\n{argstr}\n")
 
     ####################
     # Preliminar steps #

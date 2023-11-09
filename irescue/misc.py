@@ -94,7 +94,7 @@ def writerr(msg, error=False, send=True):
           Decides if the message should be sent (useful for verbose messages).
     """
     if send:
-        timelog = datetime.now().strftime("%m/%d/%Y - %H:%M:%S")
+        timelog = datetime.now().strftime("%Y/%m/%d - %H:%M:%S")
         message = f'[{timelog}] '
         if not msg[-1]=='\n':
             msg += '\n'
