@@ -33,6 +33,7 @@ def parseArguments():
                         "Takes priority over --genome (default: %(default)s).")
     parser.add_argument('-g', '--genome',
                         metavar='STR',
+                        choices=__genomes__.keys(),
                         help="Genome assembly symbol. One of: {} (default: "
                         "%(default)s).".format(', '.join(__genomes__)))
     parser.add_argument('-w', '--whitelist',
