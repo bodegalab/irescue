@@ -125,6 +125,8 @@ def main():
     # Preliminar steps #
     ####################
 
+    writerr("Running preliminary checks.")
+
     # Check requirements
     check_requirement(
         args.bedtools, '2.30.0',
@@ -151,6 +153,8 @@ def main():
     ###########
     # Mapping #
     ###########
+
+    writerr("Running mapping step.")
 
     # create directories
     os.makedirs(args.tmpdir, exist_ok=True)
@@ -197,6 +201,8 @@ def main():
     #########
     # Count #
     #########
+
+    writerr("Running count step.")
 
     # calculate number of mappings per process
     bc_per_thread = list(split_barcodes(barcodes_file, args.threads))
