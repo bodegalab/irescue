@@ -7,7 +7,7 @@ from irescue.misc import check_requirement, check_tags
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat
 from irescue.map import checkIndex
 from irescue.count import split_barcodes, index_features, run_count, formatMM, writeEC
-import argparse, os
+import argparse, os, sys
 from multiprocessing import Pool
 from functools import partial
 from shutil import rmtree
@@ -117,7 +117,7 @@ def parseArguments():
 
 def main():
     parser = parseArguments()
-    args = parser.parse_args()
+    args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
     #args = check_arguments(args)
 
 
