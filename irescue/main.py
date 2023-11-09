@@ -3,7 +3,7 @@
 from irescue._version import __version__
 from irescue._genomes import __genomes__
 from irescue.misc import writerr, versiontuple, run_shell_cmd
-from irescue.misc import check_requirement, check_arguments, check_tags
+from irescue.misc import check_requirement, check_tags
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat
 from irescue.map import checkIndex
 from irescue.count import split_barcodes, index_features, run_count, formatMM, writeEC
@@ -68,6 +68,7 @@ def parseArguments():
     parser.add_argument('--min-fraction-overlap',
                         type=float,
                         metavar='FLOAT',
+                        choices=[x/100 for x in range(101)],
                         help="Minimum overlap between read and TE"
                         " as a fraction of read's alignment"
                         " (i.e. 0.00 <= NUM <= 1.00) (Default: disabled).")
@@ -116,7 +117,7 @@ def parseArguments():
 def main():
     parser = parseArguments()
     args = parser.parse_args()
-    args = check_arguments(args)
+    #args = check_arguments(args)
 
 
     ####################

@@ -37,17 +37,17 @@ def versiontuple(version):
     """
     return tuple(map(int, version.split('.')))
 
-def check_arguments(args):
-    """
-    Check validity of arguments.
-    """
-    if isinstance(args.min_fraction_overlap, (int, float)):
-        if 0 <= args.min_fraction_overlap <= 1:
-            pass
-        else:
-            writerr("ERROR: --min-fraction-overlap must be a floating point "
-                    "number between 0 and 1.", error=True)
-    return args
+#def check_arguments(args):
+#    """
+#    Check validity of arguments.
+#    """
+#    if isinstance(args.min_fraction_overlap, (int, float)):
+#        if 0 <= args.min_fraction_overlap <= 1:
+#            pass
+#        else:
+#            writerr("ERROR: --min-fraction-overlap must be a floating point "
+#                    "number between 0 and 1.", error=True)
+#    return args
 
 def check_requirement(cmd, required_version, parser, verbose):
     """
