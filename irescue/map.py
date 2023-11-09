@@ -225,7 +225,7 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
 # Concatenate and sort data obtained from isec()
 def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
     os.makedirs(outdir, exist_ok=True)
-    mappings_file = os.path.join(tmpdir, 'cb_umi_te.bed.gz')
+    mappings_file = os.path.join(tmpdir, 'mappings.tsv.gz')
     barcodes_file = os.path.join(outdir, 'barcodes.tsv.gz')
     features_file = os.path.join(outdir, 'features.tsv.gz')
     bedFiles = ' '.join(filesList)
@@ -244,13 +244,12 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
         # result: "CB UMI FEATs count"
     cmd0 += f' | gzip > {mappings_file}'
 
-    # write barcodes.tsv file
+    # write barcodes.tsv.gz file
     cmd1 = f'zcat {mappings_file} | cut -f1 | uniq | gzip > {barcodes_file} '
 
-    # write features.tsv file
+    # write features.tsv.gz file
     cmd2 = f'zcat {mappings_file} '
     cmd2 += ' | cut -f3 | sed \'s/,/\\n/g\' | gawk \'!x[$1]++ { '
-    #cmd2 += ' print gensub(/#.+/,"",1,$1)"\\t"$1"\\tGene Expression" }\' '
     cmd2 += ' print $1"\\t"gensub(/#.+/,"",1,$1)"\\tGene Expression" }\' '
     cmd2 += f' | LC_ALL=C sort -u | gzip > {features_file} '
 
