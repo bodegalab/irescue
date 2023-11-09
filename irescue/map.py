@@ -172,7 +172,7 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
     os.makedirs(isecdir, exist_ok=True)
 
     refFile = os.path.join(refdir, chrom + '.bed.gz')
-    isecFile = os.path.join(isecdir, chrom + '.isec.bed.gz')
+    isecFile = os.path.join(isecdir, chrom + '.isec.txt.gz')
 
     # split bed file by chromosome
     sort = 'LC_ALL=C sort -k1,1 -k2,2n --buffer-size=1G'
