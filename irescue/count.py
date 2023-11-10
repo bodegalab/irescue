@@ -152,6 +152,11 @@ def compute_cell_counts(equivalence_classes, features_index, dumpEC):
         if not features:
             # take features from parent node of selected path configuration
             features = [list(subg.nodes[x[0]]['ft']) for x in path_config]
+        else:
+            # if features was already determined (i.e. no parent nodes),
+            # multiplicate the feature's list by the number of paths
+            # in path_config to avoid going out of list range
+            features *= len(path_config)
         # assign UMI count to features
         for feats in features:
             if len(feats) == 1:
