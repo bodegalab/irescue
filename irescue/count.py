@@ -249,7 +249,8 @@ def run_count(maps_file, feature_index, tmpdir, dumpEC, verbose, barcodes_set):
                 dumplines = [b'\t'.join(dumpbc + v + [b'\n'])
                              for k, v in dump.items()]
                 df.writelines(dumplines)
-        df.close()
+        if dumpEC:
+            df.close()
     return matrix_file, dump_file
 
 def formatMM(matrix_files, feature_index, barcodes_chunks, outdir):
