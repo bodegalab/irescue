@@ -223,6 +223,8 @@ def run_count(maps_file, feature_index, tmpdir, dumpEC, verbose, barcodes_set):
     matrix_file = os.path.join(tmpdir, f'{taskn}_matrix.mtx.gz')
     dump_file = os.path.join(tmpdir, f'{taskn}_EqCdump.tsv.gz')
     with gzip.open(matrix_file, 'wb') as f:
+        if dumpEC:
+            df = gzip.open(dump_file, 'wb')
         for cellbarcode, cellmaps in parse_maps(maps_file, feature_index):
             if cellbarcode not in barcodes:
                 continue
@@ -242,11 +244,12 @@ def run_count(maps_file, feature_index, tmpdir, dumpEC, verbose, barcodes_set):
             f.writelines(lines)
             if dump:
                 # append EqC log to dump file
-                with gzip.open(dump_file, 'ab') as df:
-                    dumpbc = [str(cellidx).encode(), cellbarcode]
-                    dumplines = [b'\t'.join(dumpbc + v + [b'\n'])
-                                 for k, v in dump.items()]
-                    df.writelines(dumplines)
+                #with gzip.open(dump_file, 'ab') as df:
+                dumpbc = [str(cellidx).encode(), cellbarcode]
+                dumplines = [b'\t'.join(dumpbc + v + [b'\n'])
+                             for k, v in dump.items()]
+                df.writelines(dumplines)
+        df.close()
     return matrix_file, dump_file
 
 def formatMM(matrix_files, feature_index, barcodes_chunks, outdir):
