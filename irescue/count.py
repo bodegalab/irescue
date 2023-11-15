@@ -8,13 +8,13 @@ from irescue.em import run_em
 import gzip
 import os
 
-def hdist(x, y):
-    """
-    Calculate hamming distance between sequences of the same length
-    """
-    if len(x) != len(y):
-        writerr('Error: all UMI lengths must be the same.', error=True)
-    return sum(1 for i in range(len(x)) if x[i] != y[i])
+#def hdist(x, y):
+#    """
+#    Calculate hamming distance between sequences of the same length
+#    """
+#    if len(x) != len(y):
+#        writerr('Error: all UMI lengths must be the same.', error=True)
+#    return sum(1 for i, j in zip(x, y) if i != j)
 
 def connect_umis(x, y, threshold=1):
     """
@@ -23,9 +23,9 @@ def connect_umis(x, y, threshold=1):
     x, y : iterable
         (UMI, TE, count) : (str, set, int)
     """
-    return (hdist(x[0], y[0]) <= threshold
-            and x[2] >= (2 * y[2]) - 1
-            and x[1].intersection(y[1]))
+    return (x[2] >= (2 * y[2]) - 1
+            and x[1].intersection(y[1])
+            and sum(1 for i, j in zip(x[0], y[0]) if i != j) <= threshold)
 
 def pathfinder(graph, node, path=[], features=None):
     """
