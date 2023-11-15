@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from collections import Counter
+from itertools import permutations
 import numpy as np
 import networkx as nx
 from irescue.misc import get_ranges, getlen, writerr, run_shell_cmd
@@ -90,22 +91,39 @@ def compute_cell_counts(equivalence_classes, features_index, dumpEC):
     """
     # initialize TE counts and dedup log
     counts = Counter()
-    dump = {}
+    dump = None
     number_of_features = len(features_index)
     # make inverted dictionary for writing EqC dump file
-    findex = dict(zip(features_index.values(), features_index.keys()))
+    #findex = dict(zip(features_index.values(), features_index.keys()))
     # build cell-wide UMI deduplication graph
     graph = nx.DiGraph()
-    for i, eqc1 in enumerate(equivalence_classes):
-        graph.add_node(i)
-        graph.nodes[i]['ft'] = eqc1[1]
-        for j, eqc2 in enumerate(equivalence_classes):
-            if i != j and connect_umis(eqc1, eqc2):
-                graph.add_edge(i, j)
-        if dumpEC:
-            # populate dump dictionary { i: ["UMI", "features", "count"] }
-            fnames = b','.join([findex[f] for f in eqc1[1]])
-            dump[i] = [eqc1[0], fnames, str(eqc1[2]).encode()]
+    # add nodes with annotated features
+    graph.add_nodes_from(
+        [(i, {'ft': j[1], 'c': j[2]}) for i, j in enumerate(equivalence_classes)]
+    )
+    # helper function to return connected equivalence classes indexes
+    def conn(x, y):
+        if connect_umis(x[1], y[1]):
+            return x[0], y[0]
+    # add edges
+    edges = [conn(x, y) for x, y
+             in permutations(enumerate(equivalence_classes), 2)]
+    edges = [x for x in edges if x]
+    graph.add_edges_from(edges)
+    if dumpEC:
+        dump = {i: equivalence_classes[i] for i in graph.nodes}
+
+    #for i, eqc1 in enumerate(equivalence_classes):
+    #    graph.add_node(i)
+    #    graph.nodes[i]['ft'] = eqc1[1]
+    #    for j, eqc2 in enumerate(equivalence_classes):
+    #        if i != j and connect_umis(eqc1, eqc2):
+    #            graph.add_edge(i, j)
+    #    if dumpEC:
+    #        # populate dump dictionary { i: ["UMI", "features", "count"] }
+    #        fnames = b','.join([findex[f] for f in eqc1[1]])
+    #        dump[i] = [eqc1[0], fnames, str(eqc1[2]).encode()]
+    
     # split cell-wide graph into subgraphs of connected nodes
     subgraphs = [graph.subgraph(x) for x in
                  nx.connected_components(graph.to_undirected())]
@@ -181,14 +199,16 @@ def compute_cell_counts(equivalence_classes, features_index, dumpEC):
                 # add empty fields to parent node
                 parent_ = path_[0]
                 path_.pop(0)
-                dump[parent_] += [b'', b'']
+                dump[parent_] += (b'', b'')
                 # if child nodes are present, add parent node informations
                 for x in path_:
+                    # add parent's UMI sequence and dedup features
+                    dump[x] += (dump[parent_][0], features[i])
                     # add parent UMI sequence
-                    dump[x].append(dump[parent_][0])
+                    #dump[x].append(dump[parent_][0])
                     # add features
-                    fnames = [findex[f] for f in features[i]]
-                    dump[x].append(b','.join(fnames))
+                    #fnames = [findex[f] for f in features[i]]
+                    #dump[x].append(b','.join(fnames))
     if em_array:
         # optimize the assignment of UMI from multimapping reads
         em_array = np.array(em_array)
@@ -217,7 +237,7 @@ def split_barcodes(barcodes_file, n):
         for i, chunk in enumerate(get_ranges(nBarcodes, n)):
             yield i, {next(f).strip(): x+1 for x in chunk}
 
-def run_count(maps_file, feature_index, tmpdir, dumpEC, verbose, barcodes_set):
+def run_count(maps_file, features_index, tmpdir, dumpEC, verbose, barcodes_set):
     # NB: keep args order consistent with main.countFun
     taskn, barcodes = barcodes_set
     matrix_file = os.path.join(tmpdir, f'{taskn}_matrix.mtx.gz')
@@ -225,7 +245,7 @@ def run_count(maps_file, feature_index, tmpdir, dumpEC, verbose, barcodes_set):
     with gzip.open(matrix_file, 'wb') as f:
         if dumpEC:
             df = gzip.open(dump_file, 'wb')
-        for cellbarcode, cellmaps in parse_maps(maps_file, feature_index):
+        for cellbarcode, cellmaps in parse_maps(maps_file, features_index):
             if cellbarcode not in barcodes:
                 continue
             cellidx = barcodes[cellbarcode]
@@ -233,7 +253,7 @@ def run_count(maps_file, feature_index, tmpdir, dumpEC, verbose, barcodes_set):
                     send=verbose)
             cellcounts, dump = compute_cell_counts(
                 equivalence_classes=cellmaps,
-                features_index=feature_index,
+                features_index=features_index,
                 dumpEC=dumpEC
             )
             # round counts to 3rd decimal point and write to matrix file
@@ -243,11 +263,26 @@ def run_count(maps_file, feature_index, tmpdir, dumpEC, verbose, barcodes_set):
                      if count >= 0.001]
             f.writelines(lines)
             if dump:
-                # append EqC log to dump file
-                #with gzip.open(dump_file, 'ab') as df:
+                # reverse features index to get names back
+                findex = dict(zip(features_index.values(),
+                                  features_index.keys()))
                 dumpbc = [str(cellidx).encode(), cellbarcode]
-                dumplines = [b'\t'.join(dumpbc + v + [b'\n'])
-                             for k, v in dump.items()]
+                dumplines = [
+                    b'\t'.join(
+                        [cellbarcode,
+                         umi,
+                         b','.join([findex[f] for f in feats]),
+                         str(count).encode(),
+                         pumi,
+                         b','.join([findex[f] for f in pfeats])]
+                    ) + b'\n'
+                    for i, (umi, feats, count, pumi, pfeats) in dump.items()
+                ]
+
+                #dumplines = [
+                #    b'\t'.join(
+                #        dumpbc + v + [b'\n'])
+                #             for k, v in dump.items()]
                 df.writelines(dumplines)
         if dumpEC:
             df.close()
