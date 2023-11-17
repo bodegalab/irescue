@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from collections import Counter
-from itertools import permutations
+from collections import Counter, defaultdict
+from itertools import combinations
 import numpy as np
 import networkx as nx
 from irescue.misc import get_ranges, getlen, writerr, run_shell_cmd
@@ -9,16 +9,37 @@ from irescue.em import run_em
 import gzip
 import os
 
-def connect_umis(x, y, threshold=1):
-    """
-    Check if UMI x connects to y.
+class EquivalenceClass:
+    def __init__(
+            self,
+            index: int,
+            umi: bytes,
+            features: set,
+            count: int
+    ) -> None:
+        self.index = index
+        self.umi = umi
+        self.features = features
+        self.count = count
+    def to_tuple(self):
+        return (self.umi, self.features, self.count)
+    def hdist(self, umi):
+        return sum(1 for i, j in zip(self.umi, umi) if i != j)
+    def connect(self, eqc, threshold):
+        return (self.count >= (2 * eqc.count) - 1
+                and self.features.intersection(eqc.features)
+                and self.hdist(eqc.umi) <= threshold)
 
-    x, y : iterable
-        (UMI, TE, count) : (str, set, int)
-    """
-    return (x[2] >= (2 * y[2]) - 1
-            and x[1].intersection(y[1])
-            and sum(1 for i, j in zip(x[0], y[0]) if i != j) <= threshold)
+#def connect_umis(x, y, threshold=1):
+#    """
+#    Check if UMI x connects to y.
+#
+#    x, y : iterable
+#        (UMI, TE, count) : (str, set, int)
+#    """
+#    return (x[2] >= (2 * y[2]) - 1
+#            and x[1].intersection(y[1])
+#            and sum(1 for i, j in zip(x[0], y[0]) if i != j) <= threshold)
 
 def pathfinder(graph, node, path=[], features=None):
     """
@@ -51,20 +72,58 @@ def parse_maps(maps_file, feature_index):
         [(UMI <str>, {FT <int>, ...} <set>, count <int>) <tuple>, ...]
     """
     with gzip.open(maps_file, 'rb') as f:
-        eqcl = []
-        it = f.readline().strip().split(b'\t')[0]
-        f.seek(0)
+        cb, umi, feat, count = f.readline().strip().split(b'\t')
+        i = 0
+        it = cb
+        count = int(count)
+        feat = {feature_index[ft] for ft in feat.split(b',')}
+        eqcl = [EquivalenceClass(i, umi, feat, count)]
         for line in f:
             cb, umi, feat, count = line.strip().split(b'\t')
             count = int(count)
             feat = {feature_index[ft] for ft in feat.split(b',')}
             if cb == it:
-                eqcl.append((umi, feat, count))
+                i += 1
+                eqcl.append(EquivalenceClass(i, umi, feat, count))
             else:
                 yield it, eqcl
                 it = cb
-                eqcl = [(umi, feat, count)]
+                i = 0
+                eqcl = [EquivalenceClass(i, umi, feat, count)]
         yield it, eqcl
+
+def get_substr_slices(umi_length, idx_size):
+    '''
+    Create slices to split a UMI into approximately equal size substrings
+    Returns a list of tuples that can be passed to slice function
+    '''
+    cs, r = divmod(umi_length, idx_size)
+    sub_sizes = [cs + 1] * r + [cs] * (idx_size - r)
+    offset = 0
+    slices = []
+    for s in sub_sizes:
+        slices.append((offset, offset + s))
+        offset += s
+    return slices
+
+def build_substr_idx(equivalence_classes, length, threshold):
+    slices = get_substr_slices(length, threshold+1)
+    substr_idx = {k: defaultdict(set) for k in slices}
+    for idx in slices:
+        for ec in equivalence_classes:
+            sub = ec.umi[slice(*idx)]
+            substr_idx[idx][sub].add(ec)
+    return substr_idx
+
+def gen_ec_pairs(equivalence_classes, substr_idx):
+    for i, ec in enumerate(equivalence_classes, start=1):
+        neighbours = set()
+        for idx, substr_map in substr_idx.items():
+            sub = ec.umi[slice(*idx)]
+            neighbours = neighbours.union(substr_map[sub])
+        neighbours.difference_update(equivalence_classes[:i])
+        for nbr in neighbours:
+            yield ec, nbr
 
 def compute_cell_counts(equivalence_classes, features_index, dumpEC):
     """
@@ -89,19 +148,27 @@ def compute_cell_counts(equivalence_classes, features_index, dumpEC):
     graph = nx.DiGraph()
     # add nodes with annotated features
     graph.add_nodes_from(
-        [(i, {'ft': j[1], 'c': j[2]}) for i, j in enumerate(equivalence_classes)]
+        [(x.index, {'ft': x.features, 'c': x.count})
+        for x in equivalence_classes]
     )
-    # helper function to return connected equivalence classes indexes
-    def conn(x, y):
-        if connect_umis(x[1], y[1]):
-            return x[0], y[0]
-    # add edges
-    for x, y in permutations(enumerate(equivalence_classes), 2):
-        if connect_umis(x[1], y[1]):
-            graph.add_edge(x[0], y[0])
+    # make an iterator of umi pairs
+    #umis = [i for i, j, k in equivalence_classes]
+    if len(equivalence_classes) > 25:
+        umi_length = len(equivalence_classes[0].umi)
+        substr_idx = build_substr_idx(equivalence_classes, umi_length, 1)
+        iter_ec_pairs = gen_ec_pairs(equivalence_classes, substr_idx)
+    else:
+        iter_ec_pairs = combinations(equivalence_classes, 2)
+    #for x, y in permutations(enumerate(equivalence_classes), 2):
+    for x, y in iter_ec_pairs:
+        # add edges to graph
+        if x.connect(y, 1):
+            graph.add_edge(x.index, y.index)
+        if y.connect(x, 1):
+            graph.add_edge(y.index, x.index)
     if dumpEC:
         # collect graph metadata in a dictionary
-        dump = {i: equivalence_classes[i] for i in graph.nodes}
+        dump = {i: equivalence_classes[i].to_tuple() for i in graph.nodes}
     # split cell-wide graph into subgraphs of connected nodes
     subgraphs = [graph.subgraph(x) for x in
                  nx.connected_components(graph.to_undirected())]
