@@ -37,18 +37,6 @@ def versiontuple(version):
     """
     return tuple(map(int, version.split('.')))
 
-#def check_arguments(args):
-#    """
-#    Check validity of arguments.
-#    """
-#    if isinstance(args.min_fraction_overlap, (int, float)):
-#        if 0 <= args.min_fraction_overlap <= 1:
-#            pass
-#        else:
-#            writerr("ERROR: --min-fraction-overlap must be a floating point "
-#                    "number between 0 and 1.", error=True)
-#    return args
-
 def check_requirement(cmd, required_version, parser, verbose):
     """
     Check if the required version for a software has been installed.
@@ -143,12 +131,6 @@ def getlen(file):
     f.close()
     return out
 
-def flatten(x):
-    """
-    Flatten a list of sublists.
-    """
-    return [item for sublist in x for item in sublist]
-
 def check_tags(
         bamFile, CBtag, UMItag,
         nLines=None, exit_with_error=True, verbose=False
@@ -215,26 +197,6 @@ def check_tags(
         )
     else:
         return(False)
-
-def iupac_nt_code(nts):
-    """
-    Return the IUPAC code correspondent to a set of input nucleotides.
-    """
-    codes = {
-        'R': {'A', 'G'},
-        'Y': {'C', 'T'},
-        'S': {'G', 'C'},
-        'W': {'A', 'T'},
-        'K': {'G', 'T'},
-        'M': {'A', 'C'},
-        'B': {'C', 'G', 'T'},
-        'D': {'A', 'G', 'T'},
-        'H': {'A', 'C', 'T'},
-        'V': {'A', 'C', 'G'},
-        'N': {'A', 'C', 'G', 'T'}
-    }
-    out = [k for k, v in codes.items() if v == set(nts)][0]
-    return out
 
 def get_ranges(num, div):
     """
