@@ -30,17 +30,6 @@ class EquivalenceClass:
                 and self.features.intersection(eqc.features)
                 and self.hdist(eqc.umi) <= threshold)
 
-#def connect_umis(x, y, threshold=1):
-#    """
-#    Check if UMI x connects to y.
-#
-#    x, y : iterable
-#        (UMI, TE, count) : (str, set, int)
-#    """
-#    return (x[2] >= (2 * y[2]) - 1
-#            and x[1].intersection(y[1])
-#            and sum(1 for i, j in zip(x[0], y[0]) if i != j) <= threshold)
-
 def pathfinder(graph, node, path=[], features=None):
     """
     Finds first valid path of UMIs with compatible equivalence class given
@@ -107,6 +96,9 @@ def get_substr_slices(umi_length, idx_size):
     return slices
 
 def build_substr_idx(equivalence_classes, length, threshold):
+    '''
+    Group equivalence classes into subgroups having a common substring
+    '''
     slices = get_substr_slices(length, threshold+1)
     substr_idx = {k: defaultdict(set) for k in slices}
     for idx in slices:
@@ -116,6 +108,9 @@ def build_substr_idx(equivalence_classes, length, threshold):
     return substr_idx
 
 def gen_ec_pairs(equivalence_classes, substr_idx):
+    '''
+    Yields equivalence classes pairs from build_substr_idx()
+    '''
     for i, ec in enumerate(equivalence_classes, start=1):
         neighbours = set()
         for idx, substr_map in substr_idx.items():
@@ -152,14 +147,12 @@ def compute_cell_counts(equivalence_classes, features_index, dumpEC):
         for x in equivalence_classes]
     )
     # make an iterator of umi pairs
-    #umis = [i for i, j, k in equivalence_classes]
     if len(equivalence_classes) > 25:
         umi_length = len(equivalence_classes[0].umi)
         substr_idx = build_substr_idx(equivalence_classes, umi_length, 1)
         iter_ec_pairs = gen_ec_pairs(equivalence_classes, substr_idx)
     else:
         iter_ec_pairs = combinations(equivalence_classes, 2)
-    #for x, y in permutations(enumerate(equivalence_classes), 2):
     for x, y in iter_ec_pairs:
         # add edges to graph
         if x.connect(y, 1):
@@ -290,15 +283,21 @@ def run_count(maps_file, features_index, tmpdir, dumpEC, verbose,
             if cellbarcode not in barcodes:
                 continue
             cellidx = barcodes[cellbarcode]
-            writerr(f'[{taskn}] Run count for cell {cellidx} ({cellbarcode.decode()})',
-                    send=verbose)
+            writerr(
+                f'[{taskn}] Run count for cell '
+                f'{cellidx} ({cellbarcode.decode()})',
+                send=verbose
+            )
             cellcounts, dump = compute_cell_counts(
                 equivalence_classes=cellmaps,
                 features_index=features_index,
                 dumpEC=dumpEC
             )
-            writerr(f'[{taskn}] Write count for cell {cellidx} ({cellbarcode.decode()})',
-                    send=verbose)
+            writerr(
+                f'[{taskn}] Write count for cell '
+                f'{cellidx} ({cellbarcode.decode()})',
+                send=verbose
+            )
             # round counts to 3rd decimal point and write to matrix file
             # only if count is at least 0.001
             lines = [f'{feature} {cellidx} {round(count, 3)}\n'.encode()
@@ -306,8 +305,11 @@ def run_count(maps_file, features_index, tmpdir, dumpEC, verbose,
                      if count >= 0.001]
             f.writelines(lines)
             if dumpEC:
-                writerr(f'[{taskn}] Write ECdump for cell {cellidx} ({cellbarcode.decode()})',
-                        send=verbose)
+                writerr(
+                    f'[{taskn}] Write ECdump for cell '
+                    f'{cellidx} ({cellbarcode.decode()})',
+                    send=verbose
+                )
                 # reverse features index to get names back
                 findex = dict(zip(features_index.values(),
                                   features_index.keys()))
