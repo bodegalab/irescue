@@ -57,12 +57,6 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
     # if no repeatmasker file is provided, and a genome assembly name is
     # provided, download and prepare a rmsk.bed file
     elif genome:
-        #if not genome in genomes:
-        #    writerr(
-        #        "ERROR: Genome assembly name shouldbe one of: "
-        #        f"{', '.join(genomes.keys())}",
-        #        error=True
-        #    )
         url, header_lines = genomes[genome]
         writerr(
             "Downloading and parsing RepeatMasker annotation for "
