@@ -363,6 +363,6 @@ def writeEC(ecdump_files, outdir):
     ]) + '\n'
     with gzip.GzipFile(ecdump_out, 'wb', mtime=0) as f:
         f.write(header.encode())
-    cmd = f'zcat {ecdumpstr} | LC_ALL=C sort -k1,1n -k2 | gzip >> {ecdump_out}'
+    cmd = f'zcat {ecdumpstr} | LC_ALL=C sort -k1,1n -k3,3n | gzip >> {ecdump_out}'
     run_shell_cmd(cmd)
     return ecdump_out
