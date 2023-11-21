@@ -8,7 +8,7 @@
 # IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
 
 <img align="right" height="160" src="docs/logo.png">
-IRescue is a software for quantifying the expression of transposable elements (TEs) subfamilies in single cell RNA sequencing (scRNA-seq) data. The core feature of IRescue is to consider all multiple alignments (i.e. non-primary alignments) of reads/UMIs mapping on multiple TEs in a BAM file, to accurately infer the TE subfamily of origin. IRescue implements a UMI error-correction, deduplication and quantification strategy that includes such alignment events. IRescue's output is compatible with most scRNA-seq analysis toolkits, such as Seurat or Scanpy.
+IRescue quantifies the expression fo transposable elements (TEs) subfamilies in single cell RNA sequencing (scRNA-seq) data that performs UMI-deduplication with sequencing errors correction and probabilistic assignment of multi-mapping reads by expectation-maximization (EM) procedure. TE counts are written on a sparse matrix (similar to Cell Ranger's output) compatible with Seurat, Scanpy and other toolkits.
 
 ## Content
 
@@ -57,29 +57,36 @@ singularity exec https://depot.galaxyproject.org/singularity/irescue:$TAG irescu
 
 ## <a name="usage"></a>Usage
 
-### <a name="quick_start"></a>Quick start
+```sh
+irescue --help
+```
 
-The only required input is a BAM file annotated with cell barcode and UMI sequences as tags (by default, `CB` tag for cell barcode and `UR` tag for UMI; override with `--CBtag` and `--UMItag`). You can obtain it by aligning your reads using [STARsolo](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md).
+The only required input is a BAM file annotated with cell barcode and UMI sequences as tags (by default, `CB` tag for cell barcode and `UR` tag for UMI; override with `--cb-tag` and `--umi-tag`).
+
+You can obtain it by aligning your reads using [STARsolo](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md). It is advised to keep secondary alignments in BAM file, that will be used in the EM procedure to assign multi-mapping reads (e.g. `--outFilterMultimapNmax 100 --winAnchorMultimapNmax 100` or more), and remember to output all the needed SAM attributes (e.g. `--outSAMattributes NH HI AS nM NM MD jM jI XS MC ch cN CR CY UR UY GX GN CB UB sM sS sQ`).
 
 RepeatMasker annotation will be automatically downloaded for the chosen genome assembly (e.g. `-g hg38`), or provide your own annotation in bed format (e.g. `-r TE.bed`).
 
-```bash
+```sh
 irescue -b genome_alignments.bam -g hg38
 ```
 
-If you already obtained gene-level counts (using STARsolo, Cell Ranger, Alevin, Kallisto or other tools), it is advised to provide the whitelisted cell barcodes list as a text file, e.g.: `-w barcodes.tsv`. This will significantly improve performance.
+If you already obtained gene-level counts (using STARsolo, Cell Ranger, Alevin, Kallisto or other tools), it is advised to provide the whitelisted cell barcodes list as a text file (`-w barcodes.tsv`). This will significantly improve performance by processing viable cells only.
 
-IRescue performs best using at least 4 threads, e.g.: `-p 8`.
+For optimal run time, use at least, e.g.: `-p 8`.
 
 ### <a name="output_files"></a>Output files
 
-IRescue generates TE counts in a sparse matrix format, readable by [Seurat](https://github.com/satijalab/seurat) or [Scanpy](https://github.com/scverse/scanpy):
+IRescue generates TE counts in a sparse matrix readable by [Seurat](https://github.com/satijalab/seurat) or [Scanpy](https://github.com/scverse/scanpy) into a `counts/` subdirectory. Optional outputs include a description of equivalence classes with UMI deduplication stats `ec_dump.tsv.gz` and a subdirectory of temporary files `tmp/` for debugging purpose. A detailed logging is enabled by `--verbose` and written to standard error.
 
 ```
-IRescue_out/
-├── barcodes.tsv.gz
-├── features.tsv.gz
-└── matrix.mtx.gz
+irescue_out/
+├── counts/
+│   ├── barcodes.tsv.gz
+│   ├── features.tsv.gz
+│   └── matrix.mtx.gz
+├── ec_dump.tsv.gz
+└── tmp/
 ```
 
 ### <a name="seurat"></a>Load IRescue data with Seurat
@@ -108,8 +115,10 @@ Active assay: RNA (31078 features, 0 variable features)
  1 other assay present: TE
 ```
 
+From here, TE expression can be normalized. Reductions can be made using TE or gene expression.
+
 ## <a name="cite"></a>Cite
 
 Polimeni B, Marasca F, Ranzani V, Bodega B.
-IRescue: single cell uncertainty-aware quantification of transposable elements expression.
+*IRescue: uncertainty-aware quantification of transposable elements expression at single cell level.*
 bioRxiv 2022.09.16.508229; doi: https://doi.org/10.1101/2022.09.16.508229
