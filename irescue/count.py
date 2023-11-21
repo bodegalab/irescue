@@ -352,8 +352,9 @@ def writeEC(ecdump_files, outdir):
     ecdump_out = os.path.join(outdir, 'ec_dump.tsv.gz')
     ecdumpstr = ' '.join(ecdump_files)
     header = '\t'.join([
-        'BC_index',
+        'Barcode_id',
         'Barcode',
+        'EqClass',
         'UMI',
         'Features',
         'Read_count',
