@@ -69,7 +69,7 @@
     - path: "irescue_out/counts/matrix.mtx.gz"
       md5sum: ca147b42af250be7c47c4a748693ca97
     - path: "irescue_out/ec_dump.tsv.gz"
-      md5sum: 656034da9da6e9f005af8186cbd94048
+      md5sum: d71ee82b25107d4e104d313efb4be134
 
 - name: multi ecdump
   tags:
@@ -84,7 +84,7 @@
     - path: "irescue_out/counts/matrix.mtx.gz"
       md5sum: ca147b42af250be7c47c4a748693ca97
     - path: "irescue_out/ec_dump.tsv.gz"
-      md5sum: 656034da9da6e9f005af8186cbd94048
+      md5sum: d71ee82b25107d4e104d313efb4be134
 
 - name: bp
   tags:
