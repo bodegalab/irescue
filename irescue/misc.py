@@ -37,18 +37,6 @@ def versiontuple(version):
     """
     return tuple(map(int, version.split('.')))
 
-def check_arguments(args):
-    """
-    Check validity of arguments.
-    """
-    if isinstance(args.min_fraction_overlap, (int, float)):
-        if 0 <= args.min_fraction_overlap <= 1:
-            pass
-        else:
-            writerr("ERROR: --min-fraction-overlap must be a floating point "
-                    "number between 0 and 1.", error=True)
-    return args
-
 def check_requirement(cmd, required_version, parser, verbose):
     """
     Check if the required version for a software has been installed.
@@ -94,7 +82,7 @@ def writerr(msg, error=False, send=True):
           Decides if the message should be sent (useful for verbose messages).
     """
     if send:
-        timelog = datetime.now().strftime("%m/%d/%Y - %H:%M:%S")
+        timelog = datetime.now().strftime("%Y/%m/%d - %H:%M:%S")
         message = f'[{timelog}] '
         if not msg[-1]=='\n':
             msg += '\n'
@@ -142,12 +130,6 @@ def getlen(file):
     out = sum(1 for line in f)
     f.close()
     return out
-
-def flatten(x):
-    """
-    Flatten a list of sublists.
-    """
-    return [item for sublist in x for item in sublist]
 
 def check_tags(
         bamFile, CBtag, UMItag,
@@ -216,22 +198,15 @@ def check_tags(
     else:
         return(False)
 
-def iupac_nt_code(nts):
+def get_ranges(num, div):
     """
-    Return the IUPAC code correspondent to a set of input nucleotides.
+    Splits an integer X into N integers whose sum is equal to X.
     """
-    codes = {
-        'R': {'A', 'G'},
-        'Y': {'C', 'T'},
-        'S': {'G', 'C'},
-        'W': {'A', 'T'},
-        'K': {'G', 'T'},
-        'M': {'A', 'C'},
-        'B': {'C', 'G', 'T'},
-        'D': {'A', 'G', 'T'},
-        'H': {'A', 'C', 'T'},
-        'V': {'A', 'C', 'G'},
-        'N': {'A', 'C', 'G', 'T'}
-    }
-    out = [k for k, v in codes.items() if v == set(nts)][0]
-    return out
+    split = int(num/div)
+    for i in range(0, num, split):
+        j = i + split
+        if j > num-split:
+            j = num
+            yield range(i, j)
+            break
+        yield range(i, j)

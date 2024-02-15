@@ -57,12 +57,6 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
     # if no repeatmasker file is provided, and a genome assembly name is
     # provided, download and prepare a rmsk.bed file
     elif genome:
-        if not genome in genomes:
-            writerr(
-                "ERROR: Genome assembly name shouldbe one of: "
-                f"{', '.join(genomes.keys())}",
-                error=True
-            )
         url, header_lines = genomes[genome]
         writerr(
             "Downloading and parsing RepeatMasker annotation for "
@@ -101,7 +95,7 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
                 if famclass.split('/')[0] in fams_to_skip:
                     continue
                 # concatenate family and class with subfamily
-                subfamily += '~' + famclass
+                subfamily += '#' + famclass
                 score = lst[0]
                 chr, start, end = lst[4:7]
                 # make coordinates 0-based
@@ -172,7 +166,7 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
     os.makedirs(isecdir, exist_ok=True)
 
     refFile = os.path.join(refdir, chrom + '.bed.gz')
-    isecFile = os.path.join(isecdir, chrom + '.isec.bed.gz')
+    isecFile = os.path.join(isecdir, chrom + '.isec.txt.gz')
 
     # split bed file by chromosome
     sort = 'LC_ALL=C sort -k1,1 -k2,2n --buffer-size=1G'
@@ -210,8 +204,8 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
     # remove mate information from read name
     cmd += ' { sub(/\/[12]$/,"",$4); '
     # concatenate CB and UMI with feature name
-    cmd += ' n=split($4,qname,/\//); $4=qname[n-1]"\\t"qname[n]"\\t"$16; '
-    cmd += ' print $4 }\' '
+    cmd += ' n=split($4,qname,/\//); '
+    cmd += ' print qname[n-1]"\\t"qname[n]"\\t"qname[1]"\\t"$16 }\' '
     cmd += f' | gzip > {isecFile}'
 
     writerr(f'Extracting {chrom} reference', send=verbose)
@@ -223,24 +217,34 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
     return isecFile
 
 # Concatenate and sort data obtained from isec()
-def chrcat(filesList, threads, outdir, tmpdir, verbose):
+def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
     os.makedirs(outdir, exist_ok=True)
-    mappings_file = os.path.join(tmpdir, 'cb_umi_te.bed.gz')
+    mappings_file = os.path.join(tmpdir, 'mappings.tsv.gz')
     barcodes_file = os.path.join(outdir, 'barcodes.tsv.gz')
     features_file = os.path.join(outdir, 'features.tsv.gz')
     bedFiles = ' '.join(filesList)
-    cmd0 = f'zcat {bedFiles} '
-    cmd0 += f' | LC_ALL=C sort --parallel {threads} --buffer-size 2G '
-    cmd0 += f' | gzip > {mappings_file} '
+    sort_threads = int(threads / 2 - 1)
+    sort_threads = sort_threads if sort_threads>0 else 1
+
+    # sort and summarize UMI-READ-TE mappings
+    sort_res = f'--parallel {sort_threads} --buffer-size 2G'
+    cmd0 = f'zcat {bedFiles}'
+        # input: "CB UMI READ FEAT"
+    cmd0 += f' | LC_ALL=C sort -u {sort_res}'
+    cmd0 += f' | {bedtools} groupby -g 1,2,3 -c 4 -o distinct'
+        # result: "CB UMI READ FEATs"
+    cmd0 += f' | LC_ALL=C sort -k1,2 -k4,4 {sort_res}'
+    cmd0 += f' | {bedtools} groupby -g 1,2,4 -c 3 -o count_distinct'
+        # result: "CB UMI FEATs count"
+    cmd0 += f' | gzip > {mappings_file}'
+
+    # write barcodes.tsv.gz file
     cmd1 = f'zcat {mappings_file} | cut -f1 | uniq | gzip > {barcodes_file} '
+
+    # write features.tsv.gz file
     cmd2 = f'zcat {mappings_file} '
-    cmd2 += ' | gawk \'!x[$3]++ { '
-    cmd2 += ' split($3,a,"~"); '
-    # avoid subfamilies with the same name
-    cmd2 += ' if(a[1] in sf) { sf[a[1]]+=1 } else { sf[a[1]] }; '
-    cmd2 += ' if(length(a)<2) { a[2]=a[1] }; '
-    cmd2 += ' print a[1] sf[a[1]] "\\t" a[2] "\\tGene Expression" '
-    cmd2 += ' }\' '
+    cmd2 += ' | cut -f3 | sed \'s/,/\\n/g\' | gawk \'!x[$1]++ { '
+    cmd2 += ' print $1"\\t"gensub(/#.+/,"",1,$1)"\\tGene Expression" }\' '
     cmd2 += f' | LC_ALL=C sort -u | gzip > {features_file} '
 
     writerr('Concatenating mappings', send=verbose)
