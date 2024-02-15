@@ -115,7 +115,7 @@ Active assay: RNA (31078 features, 0 variable features)
  1 other assay present: TE
 ```
 
-From here, TE expression can be normalized. To normalize according to gene counts or TE+gene counts, normalize manually or merge the assays. Reductions can be made using TE or gene expression.
+From here, TE expression can be normalized. To normalize according to gene counts or TE+gene counts, normalize manually or merge the assays. Reductions can be made using TE, gene or TE+gene expression.
 
 ## <a name="cite"></a>Cite
 
