@@ -8,7 +8,7 @@
 # IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
 
 <img align="right" height="160" src="docs/logo.png">
-IRescue quantifies the expression fo transposable elements (TEs) subfamilies in single cell RNA sequencing (scRNA-seq) data that performs UMI-deduplication with sequencing errors correction and probabilistic assignment of multi-mapping reads by expectation-maximization (EM) procedure. TE counts are written on a sparse matrix (similar to Cell Ranger's output) compatible with Seurat, Scanpy and other toolkits.
+IRescue quantifies the expression fo transposable elements (TEs) subfamilies in single cell RNA sequencing (scRNA-seq) data that performs UMI-deduplication with sequencing errors correction considering all TE subfamilies associated to multi-mapping reads. TE counts are written on a sparse matrix (similar to Cell Ranger's output) compatible with Seurat, Scanpy and other toolkits.
 
 ## Content
 
