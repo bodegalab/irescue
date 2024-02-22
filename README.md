@@ -40,6 +40,16 @@ If for any reason it's not possible or desiderable to use conda, it can be insta
 pip install irescue
 ```
 
+### Build from source
+
+By building the package directly from the source, you can try out the features and bug fixes that will be implemented in the future release. As above, you need to install some requirements manually. Be aware that builds from the development branches may be unstable.
+
+```bash
+git clone https://github.com/bodegalab/irescue
+cd irescue
+pip install .
+```
+
 ### <a name="container"></a>Container (Docker/Singularity)
 
 Docker and Singularity containers are available for each conda release of IRescue. Choose the `TAG` corresponding to the desired IRescue version [from the Biocontainers repository](https://quay.io/repository/biocontainers/irescue?tab=tags) and pull or execute the container with Docker or Singularity:
