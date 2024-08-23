@@ -72,9 +72,6 @@ def parseArguments():
                         "presence in bam file.")
     parser.add_argument('--keeptmp', action='store_true',
                         help="Keep temporary files under <output_dir>/tmp.")
-    #parser.add_argument('--tmpdir', default='irescue_out/tmp', metavar='DIR',
-    #                    help="Directory to store temporary files "
-    #                    "(default: %(default)s).")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help="Writes a lot of stuff to stderr, such as "
                         "chromosomes as they are mapped and cell barcodes "
