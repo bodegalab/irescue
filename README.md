@@ -1,9 +1,10 @@
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodegalab/irescue/python-publish.yml?logo=github&label=build)
 [![PyPI](https://img.shields.io/pypi/v/irescue?logo=python)](https://pypi.org/project/irescue/)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat&logo=anaconda)](https://bioconda.github.io/recipes/irescue/README.html)
-[![docker container](https://img.shields.io/badge/dynamic/json?url=https://quay.io/api/v1/repository/biocontainers/irescue/tag/&label=docker%20container&query=$.tags.0.name&prefix=quay.io/biocontainers/irescue:&logo=docker)](https://quay.io/repository/biocontainers/irescue?tab=tags)
-[![singularity container](https://img.shields.io/badge/dynamic/json?url=https://quay.io/api/v1/repository/biocontainers/irescue/tag/&label=singularity%20container&query=$.tags.0.name&prefix=https://depot.galaxyproject.org/singularity/irescue:&logo=linuxcontainers)](https://depot.galaxyproject.org/singularity/)
-[![Paper](https://img.shields.io/badge/DOI-10.1101%2F2022.09.16.508229-9cf)](https://doi.org/10.1101/2022.09.16.508229)
+[![paper](https://img.shields.io/badge/bioRxiv-10.1101%2F2022.09.16.508229-orange)](https://doi.org/10.1101/2022.09.16.508229)
+[![zenodo](https://img.shields.io/badge/ZENODO-10.5281/zenodo.13479364-blue)](https://doi.org/10.5281/zenodo.13479364)
+![docker](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fquay.io%2Fapi%2Fv1%2Frepository%2Fbiocontainers%2Firescue%2Ftag%2F&query=%24.tags.0.name&prefix=quay.io%2Fbiocontainers%2Firescue%3A&logo=docker&label=docker&color=%231D63ED&link=https%3A%2F%2Fquay.io%2Frepository%2Fbiocontainers%2Firescue%3Ftab%3Dtags)
+![singularity](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fquay.io%2Fapi%2Fv1%2Frepository%2Fbiocontainers%2Firescue%2Ftag%2F&query=%24.tags.0.name&prefix=https%3A%2F%2Fdepot.galaxyproject.org%2Fsingularity%2Firescue%3A&logo=linux%20containers&label=singularity&color=%231D63ED&link=https%3A%2F%2Fdepot.galaxyproject.org%2Fsingularity%2F)
 
 # IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
 
