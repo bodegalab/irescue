@@ -1,10 +1,9 @@
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/bodegalab/irescue/python-publish.yml?logo=github&label=build)
 [![PyPI](https://img.shields.io/pypi/v/irescue?logo=python)](https://pypi.org/project/irescue/)
+[![container](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fquay.io%2Fapi%2Fv1%2Frepository%2Fbiocontainers%2Firescue%2Ftag%2F&query=%24.tags.0.name&logo=docker&label=docker%2Fsingularity&color=%231D63ED)](#container)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat&logo=anaconda)](https://bioconda.github.io/recipes/irescue/README.html)
 [![paper](https://img.shields.io/badge/bioRxiv-10.1101%2F2022.09.16.508229-orange)](https://doi.org/10.1101/2022.09.16.508229)
-[![zenodo](https://img.shields.io/badge/ZENODO-10.5281/zenodo.13479364-blue)](https://doi.org/10.5281/zenodo.13479364)
-![docker](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fquay.io%2Fapi%2Fv1%2Frepository%2Fbiocontainers%2Firescue%2Ftag%2F&query=%24.tags.0.name&prefix=quay.io%2Fbiocontainers%2Firescue%3A&logo=docker&label=docker&color=%231D63ED&link=https%3A%2F%2Fquay.io%2Frepository%2Fbiocontainers%2Firescue%3Ftab%3Dtags)
-![singularity](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fquay.io%2Fapi%2Fv1%2Frepository%2Fbiocontainers%2Firescue%2Ftag%2F&query=%24.tags.0.name&prefix=https%3A%2F%2Fdepot.galaxyproject.org%2Fsingularity%2Firescue%3A&logo=linux%20containers&label=singularity&color=%231D63ED&link=https%3A%2F%2Fdepot.galaxyproject.org%2Fsingularity%2F)
+[![zenodo](https://img.shields.io/badge/Zenodo-10.5281/zenodo.13479364-blue)](https://doi.org/10.5281/zenodo.13479364)
 
 # IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
 
