@@ -17,14 +17,18 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     name: test
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
       - name: Checkout
         uses: actions/checkout@v3.3.0
 
       - name: Setup conda
-        uses: conda-incubator/setup-miniconda@v2.2.0
+        uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: tests/config/environment.yml
+          python-version: ${{ matrix.python-version }}
           condarc-file: tests/config/condarc.yml
           auto-update-conda: true
       
