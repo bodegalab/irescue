@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "IRescue"
 description = "Interspersed Repeats singl-cell quantifier"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = { file = "LICENSE" }
 authors = [
     { name = "Benedetto Polimeni", email = "polimeni@ingm.org" },
@@ -22,10 +22,11 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dependencies = [
