@@ -238,9 +238,9 @@ def run_count(maps_file, features_index, tmpdir, dumpEC, verbose,
     taskn, barcodes = barcodes_set
     matrix_file = os.path.join(tmpdir, f'{taskn}_matrix.mtx.gz')
     dump_file = os.path.join(tmpdir, f'{taskn}_EqCdump.tsv.gz')
-    with (gzip.open(matrix_file, 'wb') as f,
-          gzip.open(dump_file, 'wb') if dumpEC
-          else gzip.open(os.devnull) as df):
+    with gzip.open(matrix_file, 'wb') as f, \
+            gzip.open(dump_file, 'wb') if dumpEC \
+            else gzip.open(os.devnull) as df:
         for cellbarcode, cellmaps in parse_maps(maps_file, features_index):
             if cellbarcode not in barcodes:
                 continue
