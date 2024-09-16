@@ -2,7 +2,7 @@
 [![PyPI](https://img.shields.io/pypi/v/irescue?logo=python)](https://pypi.org/project/irescue/)
 [![container](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fquay.io%2Fapi%2Fv1%2Frepository%2Fbiocontainers%2Firescue%2Ftag%2F&query=%24.tags.0.name&logo=docker&label=docker%2Fsingularity&color=%231D63ED)](#container)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat&logo=anaconda)](https://bioconda.github.io/recipes/irescue/README.html)
-[![paper](https://img.shields.io/badge/bioRxiv-10.1101%2F2022.09.16.508229-orange)](https://doi.org/10.1101/2022.09.16.508229)
+[![paper](https://img.shields.io/badge/Nucleic%20Acids%20Res-10.1093%2Fnar%2Fgkae793-orange)](https://doi.org/10.1093/nar/gkae793)
 [![zenodo](https://img.shields.io/badge/Zenodo-10.5281/zenodo.13479364-blue)](https://doi.org/10.5281/zenodo.13479364)
 
 # IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
@@ -129,6 +129,4 @@ From here, TE expression can be normalized. To normalize according to gene count
 
 ## <a name="cite"></a>Cite
 
-Polimeni B, Marasca F, Ranzani V, Bodega B.
-*IRescue: uncertainty-aware quantification of transposable elements expression at single cell level.*
-bioRxiv 2022.09.16.508229; doi: https://doi.org/10.1101/2022.09.16.508229
+Benedetto Polimeni, Federica Marasca, Valeria Ranzani, Beatrice Bodega, **IRescue: uncertainty-aware quantification of transposable elements expression at single cell level**, *Nucleic Acids Research*, 2024; https://doi.org/10.1093/nar/gkae793
