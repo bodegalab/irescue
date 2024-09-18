@@ -3,7 +3,7 @@
 [![container](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fquay.io%2Fapi%2Fv1%2Frepository%2Fbiocontainers%2Firescue%2Ftag%2F&query=%24.tags.0.name&logo=docker&label=docker%2Fsingularity&color=%231D63ED)](#container)
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat&logo=anaconda)](https://bioconda.github.io/recipes/irescue/README.html)
 [![paper](https://img.shields.io/badge/Nucleic%20Acids%20Res-10.1093%2Fnar%2Fgkae793-orange)](https://doi.org/10.1093/nar/gkae793)
-[![zenodo](https://img.shields.io/badge/Zenodo-10.5281/zenodo.13479364-blue)](https://doi.org/10.5281/zenodo.13479364)
+[![zenodo](https://img.shields.io/badge/Zenodo-10.5281/zenodo.13479363-blue)](https://doi.org/10.5281/zenodo.13479363)
 
 # IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
 
