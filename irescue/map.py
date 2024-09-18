@@ -202,9 +202,9 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
     cmd = f'{bedtools} intersect -a {stream} -b {refFile} '
     cmd += f' -split -bed -wo -sorted {ovfrac} | gawk -vOFS="\\t" \'{ovbp} '
     # remove mate information from read name
-    cmd += ' { sub(/\/[12]$/,"",$4); '
+    cmd += ' { sub(/\\/[12]$/,"",$4); '
     # concatenate CB and UMI with feature name
-    cmd += ' n=split($4,qname,/\//); '
+    cmd += ' n=split($4,qname,/\\//); '
     cmd += ' print qname[n-1]"\\t"qname[n]"\\t"qname[1]"\\t"$16 }\' '
     cmd += f' | gzip > {isecFile}'
 
