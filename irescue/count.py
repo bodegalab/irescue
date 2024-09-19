@@ -82,7 +82,8 @@ def parse_maps(maps_file, feature_index):
                 eqcl = [EquivalenceClass(i, umi, feat, count)]
         yield it, eqcl
 
-def compute_cell_counts(equivalence_classes, features_index, dumpEC):
+def compute_cell_counts(equivalence_classes, features_index, max_iters,
+                        tolerance, dumpEC):
     """
     Calculate TE counts of a single cell, given a list of equivalence classes.
 
@@ -204,6 +205,8 @@ def compute_cell_counts(equivalence_classes, features_index, dumpEC):
                 for x in path_:
                     # add parent's UMI sequence and dedup features
                     dump[x] += (dump[parent_][0], features[i])
+    # EM stats placeholder in case of no multimapped UMIs
+    em_stats = (None, None)
     if em_array:
         # optimize the assignment of UMI from multimapping reads
         em_array = np.array(em_array)
@@ -213,12 +216,16 @@ def compute_cell_counts(equivalence_classes, features_index, dumpEC):
         todel = np.argwhere(np.all(em_array[..., :] == 0, axis=0))
         em_array = np.delete(em_array, todel, axis=1)
         # run EM
-        em_counts = run_em(em_array, cycles=100)
+        em_counts, em_stats = run_em(
+            em_array,
+            cycles=max_iters,
+            tolerance=tolerance
+        )
         em_counts = [x*em_array.shape[0] for x in em_counts]
         for i, c in zip(tokeep, em_counts):
             if c > 0:
                 counts[i] += c
-    return dict(counts), dump
+    return dict(counts), dump, em_stats
 
 def split_barcodes(barcodes_file, n):
     """
@@ -232,8 +239,8 @@ def split_barcodes(barcodes_file, n):
         for i, chunk in enumerate(get_ranges(nBarcodes, n)):
             yield i, {next(f).strip(): x+1 for x in chunk}
 
-def run_count(maps_file, features_index, tmpdir, dumpEC, verbose,
-              barcodes_set):
+def run_count(maps_file, features_index, tmpdir, dumpEC, max_iters, tolerance,
+              verbose, barcodes_set):
     # NB: keep args order consistent with main.countFun
     taskn, barcodes = barcodes_set
     matrix_file = os.path.join(tmpdir, f'{taskn}_matrix.mtx.gz')
@@ -250,14 +257,16 @@ def run_count(maps_file, features_index, tmpdir, dumpEC, verbose,
                 f'{cellidx} ({cellbarcode.decode()})',
                 level=2, send=verbose
             )
-            cellcounts, dump = compute_cell_counts(
+            cellcounts, dump, em_stats = compute_cell_counts(
                 equivalence_classes=cellmaps,
                 features_index=features_index,
+                max_iters=max_iters,
+                tolerance=tolerance,
                 dumpEC=dumpEC
             )
             writerr(
-                f'[{taskn}] Write count for cell '
-                f'{cellidx} ({cellbarcode.decode()})',
+                f'[{taskn}] Write cell {cellidx} ({cellbarcode.decode()}). '
+                f'EM cycles: {em_stats[0]}. Coverged: {em_stats[1]}.',
                 level=1, send=verbose
             )
             # round counts to 3rd decimal point and write to matrix file
