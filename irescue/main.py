@@ -72,10 +72,10 @@ def parseArguments():
                         "presence in bam file.")
     parser.add_argument('--keeptmp', action='store_true',
                         help="Keep temporary files under <output_dir>/tmp.")
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help="Writes a lot of stuff to stderr, such as "
-                        "chromosomes as they are mapped and cell barcodes "
-                        "as they are processed.")
+    parser.add_argument('-v', '--verbose', action='count', default=0,
+                        help="Writes additional logging to stderr. "
+                        "Use once for normal verbosity (-v), "
+                        "twice for debugging (-vv).")
     parser.add_argument('-V', '--version', action='version',
                         version='%(prog)s {}'.format(__version__),
                         help="Print software's version and exit.")
@@ -156,7 +156,7 @@ def main():
     writerr(
         "Computing overlap between reads and TEs coordinates in the "
         "following references: {}".format(', '.join(chrNames)),
-        send=args.verbose
+        level=1, send=args.verbose
     )
     isecFun = partial(
         isec, args.bam, regions, whitelist, args.cb_tag, args.umi_tag,
@@ -214,7 +214,7 @@ def main():
         writerr(f'Writing Equivalence Classes to {ecdump_file}')
 
     if not args.keeptmp:
-        writerr(f'Cleaning up temporary files.', send=args.verbose)
+        writerr(f'Cleaning up temporary files.', level=1, send=args.verbose)
         rmtree(dirs['tmp'])
 
     writerr('Done.')
