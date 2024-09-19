@@ -55,6 +55,12 @@ def parseArguments():
                         help="Minimum overlap between read and TE"
                         " as a fraction of read's alignment"
                         " (i.e. 0.00 <= NUM <= 1.00) (Default: disabled).")
+    parser.add_argument('--max-iters', type=int, metavar='INT', default=100,
+                        help="Maximum number of EM iterations "
+                        "(Default: %(default)s).")
+    parser.add_argument('--tolerance', type=float, metavar='FLOAT',
+                        default=1e-4, help="Log-likelihood change below which "
+                        "convergence is assumed (Default: %(default)s).")
     parser.add_argument('--dump-ec', action='store_true',
                         help="Write a description log file of Equivalence "
                         "Classes.")
@@ -190,7 +196,7 @@ def main():
     # calculate TE counts
     countFun = partial(
         run_count, mappings_file, feature_index, dirs['tmp'],
-        args.dump_ec, args.verbose
+        args.dump_ec, args.max_iters, args.tolerance, args.verbose
     )
     if args.threads > 1:
         mtxFiles = pool.map(countFun, bc_per_thread)

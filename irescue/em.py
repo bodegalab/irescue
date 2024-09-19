@@ -17,7 +17,15 @@ def m_step(matrix):
     counts = matrix.sum(axis=0) / matrix.sum()
     return(counts)
 
-def run_em(matrix, cycles=100):
+def log_likelihood(matrix, counts):
+    """
+    Compute log-likelihood of data.
+    """
+    likelihoods = (matrix * counts).sum(axis=1)
+    log_likelihood = np.sum(np.log(likelihoods + np.finfo(float).eps))
+    return log_likelihood
+
+def run_em(matrix, cycles=100, tolerance=1e-5):
     """
     Run Expectation-Maximization (EM) algorithm to redistribute read counts
     across a set of features.
@@ -28,22 +36,45 @@ def run_em(matrix, cycles=100):
         Reads-features compatibility matrix.
     cycles : int, optional
         Number of EM cycles.
+    tolerance : float
+        Tolerance threshold of log-likelihood difference to infer convergence.
 
     Returns
     -------
     out : list
         Optimized relative feature abundances.
+    cycle : int
+        Number of EM cycles.
+    converged : bool
+        Indicates if convergence has been reached before cycles theshold.
     """
-    
+
     # calculate initial estimation of relative abundance.
     # (let the sum of counts of features be 1,
     # will be multiplied by the real UMI count later)
     nFeatures = matrix.shape[1]
     counts = np.array([1 / nFeatures] * nFeatures)
 
-    # run EM for n cycles
-    for _ in range(cycles):
+    # Initial log-likelihood
+    prev_loglik = log_likelihood(matrix, counts)
+
+    converged = False
+    curr_cycle = 0
+
+    # Run EM iterations
+    while curr_cycle < cycles:
+        curr_cycle += 1
         e_matrix = e_step(matrix=matrix, counts=counts)
         counts = m_step(matrix=e_matrix)
 
-    return(counts)
+        # Compute the new log-likelihood
+        loglik = log_likelihood(matrix, counts)
+
+        # Check for convergence
+        if np.abs(loglik - prev_loglik) < tolerance:
+            converged = True
+            break
+
+        prev_loglik = loglik
+
+    return counts, (curr_cycle, converged)
