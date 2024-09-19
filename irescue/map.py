@@ -26,7 +26,8 @@ def checkIndex(bamFile, verbose):
                 writerr('BAM indexing done.')
         else:
             if verbose:
-                writerr(f'Found index for BAM file {bamFile}', send=verbose)
+                writerr(f'Found index for BAM file {bamFile}',
+                        level=1, send=verbose)
 
 
 # Check repeatmasker regions bed file format. Download if not provided.
@@ -202,17 +203,17 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
     cmd = f'{bedtools} intersect -a {stream} -b {refFile} '
     cmd += f' -split -bed -wo -sorted {ovfrac} | gawk -vOFS="\\t" \'{ovbp} '
     # remove mate information from read name
-    cmd += ' { sub(/\/[12]$/,"",$4); '
+    cmd += ' { sub(/\\/[12]$/,"",$4); '
     # concatenate CB and UMI with feature name
-    cmd += ' n=split($4,qname,/\//); '
+    cmd += ' n=split($4,qname,/\\//); '
     cmd += ' print qname[n-1]"\\t"qname[n]"\\t"qname[1]"\\t"$16 }\' '
     cmd += f' | gzip > {isecFile}'
 
-    writerr(f'Extracting {chrom} reference', send=verbose)
+    writerr(f'Extracting {chrom} reference', level=2, send=verbose)
     run_shell_cmd(cmd0)
-    writerr(f'Intersecting alignments with {chrom} reference', send=verbose)
+    writerr(f'Mapping alignments to {chrom}', level=1, send=verbose)
     run_shell_cmd(cmd)
-    writerr(f'Finished mapping {chrom}', send=verbose)
+    writerr(f'Mapped {chrom}', level=1, send=verbose)
 
     return isecFile
 
@@ -247,7 +248,7 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
     cmd2 += ' print $1"\\t"gensub(/#.+/,"",1,$1)"\\tGene Expression" }\' '
     cmd2 += f' | LC_ALL=C sort -u | gzip > {features_file} '
 
-    writerr('Concatenating mappings', send=verbose)
+    writerr('Concatenating mappings', level=1, send=verbose)
     run_shell_cmd(cmd0)
     if getlen(mappings_file) == 0:
         writerr(

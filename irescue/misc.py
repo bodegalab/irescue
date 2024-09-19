@@ -58,7 +58,7 @@ def check_requirement(cmd, required_version, parser, verbose):
             else:
                 writerr(
                     f"Found {cmd} version {version}. Proceeding.",
-                    send=verbose
+                    level=1, send=verbose
                 )
         except:
             writerr(
@@ -68,7 +68,7 @@ def check_requirement(cmd, required_version, parser, verbose):
             )
 
 # Small function to write a message to stderr with timestamp
-def writerr(msg, error=False, send=True):
+def writerr(msg, error=False, level=0, send=0):
     """
     Write a message to stderr with timestamp.
 
@@ -78,10 +78,12 @@ def writerr(msg, error=False, send=True):
          Message to write to stderr.
     error: bool
            Set True if the message is an error (write with sys.exit).
-    send: bool
-          Decides if the message should be sent (useful for verbose messages).
+    verbosity: int
+            Verbosity level of the message.
+    send: int
+          If >=verbosity, the message will be sent.
     """
-    if send:
+    if send>=level or error:
         timelog = datetime.now().strftime("%Y/%m/%d - %H:%M:%S")
         message = f'[{timelog}] '
         if not msg[-1]=='\n':
@@ -158,7 +160,7 @@ def check_tags(
         writerr(
             f"Testing bam file for {CBtag} and {UMItag} tags presence. "
             "Will stop at the first occurrence.",
-            send=verbose
+            level=1, send=verbose
         )
         for read in f:
             if nLines and c >= nLines:

@@ -255,7 +255,7 @@ def run_count(maps_file, features_index, tmpdir, dumpEC, max_iters, tolerance,
             writerr(
                 f'[{taskn}] Run count for cell '
                 f'{cellidx} ({cellbarcode.decode()})',
-                send=verbose
+                level=2, send=verbose
             )
             cellcounts, dump, em_stats = compute_cell_counts(
                 equivalence_classes=cellmaps,
@@ -267,7 +267,7 @@ def run_count(maps_file, features_index, tmpdir, dumpEC, max_iters, tolerance,
             writerr(
                 f'[{taskn}] Write cell {cellidx} ({cellbarcode.decode()}). '
                 f'EM cycles: {em_stats[0]}. Coverged: {em_stats[1]}.',
-                send=verbose
+                level=1, send=verbose
             )
             # round counts to 3rd decimal point and write to matrix file
             # only if count is at least 0.001
@@ -279,7 +279,7 @@ def run_count(maps_file, features_index, tmpdir, dumpEC, max_iters, tolerance,
                 writerr(
                     f'[{taskn}] Write ECdump for cell '
                     f'{cellidx} ({cellbarcode.decode()})',
-                    send=verbose
+                    level=1, send=verbose
                 )
                 # reverse features index to get names back
                 findex = dict(zip(features_index.values(),
