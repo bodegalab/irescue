@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "IRescue"
-description = "Interspersed Repeats singl-cell quantifier"
+description = "Uncertainty-aware quantification of transposable elements expression in scRNA-seq"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
