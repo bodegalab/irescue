@@ -56,10 +56,12 @@ jobs:
 
       - name: Upload logs on failure
         if: failure()
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v4.6.0
         with:
+          name: artifact_py${{matrix.python-version}}
           path: |
             /home/runner/pytest_workflow_*/*/log.out
             /home/runner/pytest_workflow_*/*/log.err
             /home/runner/pytest_workflow_*/*/IRescue_out
             /home/runner/pytest_workflow_*/*/IRescue_tmp
+          include-hidden-files: true
