@@ -75,13 +75,13 @@ def writerr(msg, error=False, level=0, send=0):
     Parameters
     ----------
     msg: string
-         Message to write to stderr.
+        Message to write to stderr.
     error: bool
-           Set True if the message is an error (write with sys.exit).
-    verbosity: int
-            Verbosity level of the message.
+        Set True if the message is an error (write with sys.exit).
+    level: int
+        Verbosity level of the message.
     send: int
-          If >=verbosity, the message will be sent.
+        If >=verbosity, the message will be sent.
     """
     if send>=level or error:
         timelog = datetime.now().strftime("%Y/%m/%d - %H:%M:%S")
@@ -157,46 +157,82 @@ def check_tags(
     """
     with pysam.AlignmentFile(bamFile, 'rb') as f:
         c = 1
-        writerr(
-            f"Testing bam file for {CBtag} and {UMItag} tags presence. "
-            "Will stop at the first occurrence.",
-            level=1, send=verbose
-        )
+        if not UMItag:
+            writerr(
+                f"Testing BAM file for {CBtag} tag presence. "
+                "Will stop at the first occurrence.",
+                level=1, send=verbose
+            )
+        else:
+            writerr(
+                f"Testing BAM file for {CBtag} and {UMItag} tags presence. "
+                "Will stop at the first occurrence.",
+                level=1, send=verbose
+            )    
         for read in f:
             if nLines and c >= nLines:
                 break
             elif c % 1000000 == 0:
-                writerr(
-                    f"WARNING: Couldn't find {CBtag} and {UMItag} tags in "
-                    f"the first {c} records. Did you select the right tags? "
-                    "Continuing parsing bam until first occurrence..."
-                )
+                if not UMItag:     ## could have more sense to have two for loops for the two conditions (so to not check at each iteration but just once)
+                    writerr(
+                        f"WARNING: Couldn't find {CBtag} tag in "
+                        f"the first {c} records. Did you select the right tag? "
+                        "Continuing parsing bam until first occurrence..."
+                    )
+                else:
+                    writerr(
+                        f"WARNING: Couldn't find {CBtag} and {UMItag} tags in "
+                        f"the first {c} records. Did you select the right tags? "
+                        "Continuing parsing bam until first occurrence..."
+                    )    
             try:
-                read.get_tag(CBtag) and read.get_tag(UMItag)
-                writerr(
-                    f"Found {CBtag} and {UMItag} tags occurrence "
-                    f"in bam's line {c}."
-                )
+                if not UMItag:
+                    read.get_tag(CBtag)
+                    writerr(
+                        f"Found {CBtag} tag occurrence "
+                        f"in BAM's line {c}."
+                    )
+                else:
+                    read.get_tag(CBtag) and read.get_tag(UMItag)
+                    writerr(
+                        f"Found {CBtag} and {UMItag} tags occurrence "
+                        f"in BAM's line {c}."
+                    )
                 return(True)
             except:
                 c += 1
                 pass
     if exit_with_error:
-        writerr(
-            """
-            ERROR: Couldn't find {} and {} tags in {}the bam file.
-            Check you bam file for the presence of tags for cell barcode
-            and UMI sequences, then provide them to IRescue through
-            --CBtag and --UMItag flags.
-            If you expect few alignments to contain the tags, you can
-            suppress this check with --no-tags-check
-            """.format(
-                CBtag,
-                UMItag,
-                f'the first {nLines} lines of ' if nLines else ''
-            ),
-            error=True
-        )
+        if not UMItag:
+            writerr(
+                """
+                ERROR: Couldn't find {} tag in {}the BAM file.
+                Check your BAM file for the presence of tag for cell barcode,
+                 then provide it to IRescue through --CBtag flag.
+                If you expect few alignments to contain the tag, you can
+                suppress this check with --no-tags-check
+                """.format(
+                    CBtag,
+                    f'the first {nLines} lines of ' if nLines else ''
+                ),
+                error=True
+            )
+        else:
+            writerr(
+                """
+                ERROR: Couldn't find {} and {} tags in {}the BAM file.
+                Check your BAM file for the presence of tags for cell barcode
+                and UMI sequences, then provide them to IRescue through
+                --CBtag and --UMItag flags.
+                If you expect few alignments to contain the tags, you can
+                suppress this check with --no-tags-check
+                """.format(
+                    CBtag,
+                    UMItag,
+                    f'the first {nLines} lines of ' if nLines else ''
+                ),
+                error=True
+            )
     else:
         return(False)
 

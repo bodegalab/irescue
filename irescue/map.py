@@ -26,9 +26,8 @@ def checkIndex(bamFile, verbose):
                 writerr('BAM indexing done.')
         else:
             if verbose:
-                writerr(f'Found index for BAM file {bamFile}',
+                writerr(f'Found index for BAM file {bamFile}.',
                         level=1, send=verbose)
-
 
 # Check repeatmasker regions bed file format. Download if not provided.
 # Returns the path of the repeatmasker bed file.
@@ -186,10 +185,16 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
     stream += ' for (i=12;i<=NF;i++) {split($i,tag,":"); tags[tag[1]]=tag[3]}; '
     # Discard records without CB tag, unvalid STARSolo CBs, missing UMI tag,
     # UMIs with Ns and homopolymer UMIs
-    stream += f' if(tags["{CBtag}"]~/^(|-)$/ || tags["{UMItag}"]~/.*N.*/ || '
-    stream += f' tags["{UMItag}"]~/^$|^(A+|G+|T+|C+)$/) {{next}}; '
+    if UMItag:
+        stream += f' if(tags["{CBtag}"]~/^(|-)$/ || tags["{UMItag}"]~/.*N.*/ || '
+        stream += f' tags["{UMItag}"]~/^$|^(A+|G+|T+|C+)$/) {{next}}; '  
+    else:
+        stream += f' if(tags["{CBtag}"]~/^(|-)$/) {{next}}; '
     # Append CB and UMI to read name
-    stream += f' $1=$1"/"tags["{CBtag}"]"/"tags["{UMItag}"]; '
+    if UMItag:
+        stream += f' $1=$1"/"tags["{CBtag}"]"/"tags["{UMItag}"]; '
+    else:
+        stream += f' $1=$1"/"tags["{CBtag}"]"/"$1; '
     stream += ' } '
     stream += ' { OFS="\\t"; print }\' | '
     stream += f' {samtools} view -u - | '
@@ -236,7 +241,7 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
         # result: "CB UMI READ FEATs"
     cmd0 += f' | LC_ALL=C sort -k1,2 -k4,4 {sort_res}'
     cmd0 += f' | {bedtools} groupby -g 1,2,4 -c 3 -o count_distinct'
-        # result: "CB UMI FEATs count"
+        # result: "CB UMI FEATs count"     ## with --no-umi it's CB READ FEATs 1
     cmd0 += f' | gzip > {mappings_file}'
 
     # write barcodes.tsv.gz file
@@ -273,5 +278,5 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
             ' Check annotation and temporary files to troubleshoot.',
             error=True
         )
-
+    
     return mappings_file, barcodes_file, features_file

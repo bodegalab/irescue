@@ -43,6 +43,8 @@ def parseArguments():
     parser.add_argument('-u', '--umi-tag', default='UR', metavar='STR',
                         help="BAM tag containing the UMI sequence "
                         "(default: %(default)s).")
+    parser.add_argument('--no-umi', action='store_true',
+                        help="Use if input BAM doesn't have UMIs.")
     parser.add_argument('-p', '--threads', type=int, default=1, metavar='CPUS',
                         help="Number of cpus to use (default: %(default)s).")
     parser.add_argument('-o', '--outdir', default='irescue_out', metavar='DIR',
@@ -75,7 +77,7 @@ def parseArguments():
                         "PATH (Default: %(default)s).")
     parser.add_argument('--no-tags-check', action='store_true',
                         help="Suppress checking for CBtag and UMItag "
-                        "presence in bam file.")
+                        "presence in BAM file.")
     parser.add_argument('--keeptmp', action='store_true',
                         help="Keep temporary files under <output_dir>/tmp.")
     parser.add_argument('-v', '--verbose', action='count', default=0,
@@ -93,6 +95,10 @@ def main():
     # Parse and print arguments
     parser = parseArguments()
     args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
+    
+    if args.no_umi:
+        args.umi_tag = ""
+
     argstr = '\n'.join(f'    {k}: {v}' for k, v in args.__dict__.items())
     sys.stderr.write(f"    IRescue version {__version__}\n{argstr}\n")
 
@@ -186,7 +192,7 @@ def main():
     #########
 
     writerr("Running count step.")
-
+    
     # calculate number of mappings per process
     bc_per_thread = list(split_barcodes(barcodes_file, args.threads))
 
@@ -195,7 +201,7 @@ def main():
 
     # calculate TE counts
     countFun = partial(
-        run_count, mappings_file, feature_index, dirs['tmp'],
+        run_count, mappings_file, feature_index, dirs['tmp'], args.no_umi,
         args.dump_ec, args.max_iters, args.tolerance, args.verbose
     )
     if args.threads > 1:
@@ -216,11 +222,11 @@ def main():
     )
     writerr(f'Writing sparse matrix to {matrix_file}')
     if args.dump_ec:
-        ecdump_file = writeEC(ecdump_files, outdir=dirs['out'])
+        ecdump_file = writeEC(ecdump_files, args.no_umi, outdir=dirs['out'])
         writerr(f'Writing Equivalence Classes to {ecdump_file}')
 
     if not args.keeptmp:
-        writerr(f'Cleaning up temporary files.', level=1, send=args.verbose)
+        writerr('Cleaning up temporary files.', level=1, send=args.verbose)
         rmtree(dirs['tmp'])
 
     writerr('Done.')
