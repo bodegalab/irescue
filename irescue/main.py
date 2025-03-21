@@ -5,7 +5,7 @@ from irescue._genomes import __genomes__
 from irescue.misc import writerr, versiontuple, run_shell_cmd
 from irescue.misc import check_requirement, check_tags
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat
-from irescue.map import checkIndex
+from irescue.map import checkIndex, checkSort
 from irescue.count import split_barcodes, index_features, run_count, formatMM, writeEC
 import argparse, os, sys
 from multiprocessing import Pool
@@ -134,6 +134,9 @@ def main():
     if not args.no_tags_check:
         check_tags(bamFile=args.bam, CBtag=args.cb_tag, UMItag=args.umi_tag,
                    nLines=999999, exit_with_error=True, verbose=args.verbose)
+
+    # Check if bam file is sorted by coordinate.
+    checkSort(args.bam, verbose=args.verbose)
 
     # Check for bam index file. If not present, will build an index.
     checkIndex(args.bam, verbose=args.verbose)

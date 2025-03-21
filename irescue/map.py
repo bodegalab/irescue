@@ -9,6 +9,25 @@ from pysam import idxstats, AlignmentFile, index
 from gzip import open as gzopen
 import requests, io, os
 
+# Check if bam file is sorted by coordinate
+def checkSort(bamFile, verbose):
+    with AlignmentFile(bamFile, "rb") as bam:
+        header = bam.header.to_dict()
+        if 'HD' in header and 'SO' in header['HD']:
+            sorting = header['HD']['SO']
+        else:
+            sorting = "unknown"
+    if sorting == "coordinate":
+        if verbose:
+            writerr(f'BAM file {bamFile} is sorted by coordinate.',
+                    level=1, send=verbose)
+    else:
+        writerr(
+            "Couldn't define if BAM file is sorted. Please do so manually "
+            f"with `samtools sort {bamFile}`.",
+            error=True
+            )
+    
 # Check if bam file is indexed
 def checkIndex(bamFile, verbose):
     with AlignmentFile(bamFile) as bam:
