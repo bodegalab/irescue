@@ -1,5 +1,5 @@
 - name: base
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --keeptmp -vv
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 1a74fa12e65ac1703bbe61282854f151
@@ -11,7 +11,7 @@
 - name: genome
   tags:
     - genome
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -g test --keeptmp -vv
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -g test
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 1a74fa12e65ac1703bbe61282854f151
@@ -23,7 +23,7 @@
 - name: multi
   tags:
     - multi
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -p 2 --keeptmp -vv
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -p 2
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 1a74fa12e65ac1703bbe61282854f151
@@ -35,7 +35,7 @@
 - name: whitelist
   tags:
     - whitelist
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -w ./tests/data/whitelist.txt --keeptmp -vv
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -w ./tests/data/whitelist.txt
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 95dccc15cbee4feeeae2fbce4d7b41ad
@@ -48,7 +48,7 @@
   tags:
     - multi
     - whitelist
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -w ./tests/data/whitelist.txt --keeptmp -vv -p 2
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -w ./tests/data/whitelist.txt -p 2
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 95dccc15cbee4feeeae2fbce4d7b41ad
@@ -60,7 +60,7 @@
 - name: ecdump
   tags:
     - ecdump
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --keeptmp -vv --dump-ec
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --dump-ec
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 1a74fa12e65ac1703bbe61282854f151
@@ -75,7 +75,7 @@
   tags:
     - multi
     - ecdump
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --keeptmp -vv -p 2 --dump-ec
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz -p 2 --dump-ec
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 1a74fa12e65ac1703bbe61282854f151
@@ -89,7 +89,7 @@
 - name: bp
   tags:
     - bp
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --keeptmp -vv --min-bp-overlap 10
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --min-bp-overlap 10
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 7433e88e94aec2f16a20459275188f1f
@@ -101,7 +101,7 @@
 - name: fraction
   tags:
     - fraction
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --keeptmp -vv --min-fraction-overlap 0.5
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --min-fraction-overlap 0.5
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 4de44d3e4a851392a48ccabfee5bb6fc
@@ -114,7 +114,7 @@
   tags:
     - bp
     - fraction
-  command: irescue -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --keeptmp -vv --min-bp-overlap 10 --min-fraction-overlap 0.5
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --min-bp-overlap 10 --min-fraction-overlap 0.5
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 4de44d3e4a851392a48ccabfee5bb6fc
@@ -122,3 +122,15 @@
       md5sum: f304e63657f73eeec0edffed68490b6c
     - path: "irescue_out/counts/matrix.mtx.gz"
       md5sum: 336e5a5edfad998bc7d64cf0e68cc897
+
+- name: no_umi
+  tags:
+    - no_umi
+  command: irescue --keeptmp -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -r ./tests/data/rmsk.bed.gz --no-umi
+  files:
+    - path: "irescue_out/counts/barcodes.tsv.gz"
+      md5sum: 1a74fa12e65ac1703bbe61282854f151
+    - path: "irescue_out/counts/features.tsv.gz"
+      md5sum: ae84bc368a289e070b754030a65d69b4
+    - path: "irescue_out/counts/matrix.mtx.gz"
+      md5sum: ccf7eac26deadab53c1b12d981a8a5e6
