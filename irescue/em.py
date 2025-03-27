@@ -46,7 +46,7 @@ def run_em(matrix, cycles=100, tolerance=1e-5):
     cycle : int
         Number of EM cycles.
     converged : bool
-        Indicates if convergence has been reached before cycles theshold.
+        Indicates if convergence has been reached before cycles threshold.
     """
 
     # calculate initial estimation of relative abundance.
