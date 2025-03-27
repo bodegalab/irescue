@@ -44,7 +44,7 @@ def parseArguments():
                         help="BAM tag containing the UMI sequence "
                         "(default: %(default)s).")
     parser.add_argument('--no-umi', action='store_true',
-                        help="Use if input BAM doesn't have UMIs.")
+                        help="Ignore UMI sequence (for UMI-less technologies, such as SMART-seq).")
     parser.add_argument('-p', '--threads', type=int, default=1, metavar='CPUS',
                         help="Number of cpus to use (default: %(default)s).")
     parser.add_argument('-o', '--outdir', default='irescue_out', metavar='DIR',
