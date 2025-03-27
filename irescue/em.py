@@ -71,10 +71,11 @@ def run_em(matrix, cycles=100, tolerance=1e-5):
         loglik = log_likelihood(matrix, counts)
 
         # Check for convergence
-        if np.abs(loglik - prev_loglik) < tolerance:
+        loglikdiff = loglik - prev_loglik
+        if np.abs(loglikdiff) < tolerance:
             converged = True
             break
 
         prev_loglik = loglik
 
-    return counts, (curr_cycle, converged)
+    return counts, (curr_cycle, converged, loglik, loglikdiff)

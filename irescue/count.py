@@ -221,7 +221,7 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
                 dump[eqc.index] = eqc.to_tuple()
     
     # EM stats placeholder in case of no multimapped UMIs
-    em_stats = (None, None)
+    em_stats = (None, None, None, None)
     if em_array:
         # optimize the assignment of UMI from multimapping reads
         em_array = np.array(em_array)
@@ -281,8 +281,9 @@ def run_count(maps_file, features_index, tmpdir, no_umi, dumpEC, max_iters,
                 no_umi=no_umi
             )
             writerr(
-                f'[{taskn}] Write cell {cellidx} ({cellbarcode.decode()}). '
-                f'EM cycles: {em_stats[0]}. Converged: {em_stats[1]}.',
+                f"[{taskn}] Write cell {cellidx} ({cellbarcode.decode()}). "
+                f"EM cycles: {em_stats[0]}. Converged: {em_stats[1]}. "
+                f"Log likelihood: {em_stats[2]}. Increment: {em_stats[3]}.",
                 level=1, send=verbose
             )
             # round counts to 3rd decimal point and write to matrix file
