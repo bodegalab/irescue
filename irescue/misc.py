@@ -21,7 +21,7 @@ def run_shell_cmd(cmd):
         text=True
     )
     pid = p.pid
-    pgid = os.getpgid(pid)
+    os.getpgid(pid)
     stdout, stdin = p.communicate(cmd)
     return stdout.strip('\n')
 
@@ -60,11 +60,11 @@ def check_requirement(cmd, required_version, parser, verbose):
                     f"Found {cmd} version {version}. Proceeding.",
                     level=1, send=verbose
                 )
-        except:
+        except Exception as e:
             writerr(
                 f"WARNING: Found {cmd} but couldn't parse its version. "
                 f"NB: {cmd} versions prior {required_version} are "
-                f"not supported."
+                f"not supported.\n\n{e}"
             )
 
 # Small function to write a message to stderr with timestamp
@@ -186,7 +186,7 @@ def check_tags(
                     )
 
                 return(True)
-            except:
+            except Exception:
                 c += 1
                 pass
     if exit_with_error:

@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 
+import requests
+import io
+import os
+from pysam import idxstats, AlignmentFile, index
+from gzip import open as gzopen
 from irescue.misc import testGz
 from irescue.misc import writerr
 from irescue.misc import unGzip
 from irescue.misc import run_shell_cmd
 from irescue.misc import getlen
-from pysam import idxstats, AlignmentFile, index
-from gzip import open as gzopen
-import requests, io, os
 
 # Check if bam file is indexed
 def checkIndex(bamFile, verbose):
@@ -16,10 +18,11 @@ def checkIndex(bamFile, verbose):
             writerr('BAM index not found. Attempting to index the BAM...')
             try:
                 index(bamFile)
-            except:
+            except Exception as e:
                 writerr(
-                    "Couldn't index the BAM file. Please do so manually "
-                    f"with `samtools index {bamFile}`.",
+                    "ERROR: Couldn't index the BAM file. Is your BAM file "
+                    "sorted? If not, please sort it by coordinate "
+                    f"with `samtools index {bamFile}`.\n\n{e}",
                     error=True
                 )
             else:
@@ -36,10 +39,12 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
     if regions:
         if testGz(regions):
             f = gzopen(regions, 'rb')
-            rl = lambda x: x.readline().decode()
+            def rl(x):
+                return x.readline().decode()
         else:
             f = open(regions, 'r')
-            rl = lambda x: x.readline()
+            def rl(x):
+                return x.readline()
         # skip header
         line = rl(f)
         while line[0] == '#':
@@ -63,10 +68,10 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
             f"assembly {genome} from {url} ...")
         try:
             response = requests.get(url, stream=True, timeout=60)
-        except:
+        except Exception as e:
             writerr(
                 "ERROR: Download of RepeatMasker annotation failed. "
-                "Couldn't connect to host.",
+                f"Couldn't connect to host.\n\n{e}",
                 error=True
             )
         rmsk = gzopen(io.BytesIO(response.content), 'rb')
@@ -125,9 +130,9 @@ def prepare_whitelist(whitelist, tmpdir):
 def getRefs(bamFile, bedFile):
     chrNames = list()
     for line in idxstats(bamFile).strip().split('\n'):
-        l = line.strip().split('\t')
-        if int(l[2])>0:
-            chrNames.append(l[0])
+        fields = line.strip().split('\t')
+        if int(fields[2])>0:
+            chrNames.append(fields[0])
     bedChrNames = set()
     if testGz(bedFile):
         with gzopen(bedFile, 'rb') as f:
@@ -194,7 +199,6 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
         stream += f' if(tags["{CBtag}"]~/^(|-)$/) {{next}}; '
         # Append CB to read name, and read name again (replacing UMI)
         stream += f' $1=$1"/"tags["{CBtag}"]"/"$1; '
-    # Append CB and UMI to read name
     stream += ' } '
     stream += ' { OFS="\\t"; print }\' | '
     stream += f' {samtools} view -u - | '
@@ -233,6 +237,7 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
     sort_threads = sort_threads if sort_threads>0 else 1
 
     # sort and summarize UMI-READ-TE mappings
+    # (if --no-umi, UMI is replaced by READ)
     sort_res = f'--parallel {sort_threads} --buffer-size 2G'
     cmd0 = f'zcat {bedFiles}'
         # input: "CB UMI READ FEAT"
@@ -241,7 +246,7 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
         # result: "CB UMI READ FEATs"
     cmd0 += f' | LC_ALL=C sort -k1,2 -k4,4 {sort_res}'
     cmd0 += f' | {bedtools} groupby -g 1,2,4 -c 3 -o count_distinct'
-        # result: "CB UMI FEATs count"     ## with --no-umi it's CB READ FEATs 1
+        # result: "CB UMI FEATs count"
     cmd0 += f' | gzip > {mappings_file}'
 
     # write barcodes.tsv.gz file

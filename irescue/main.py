@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+import argparse
+import os
+import sys
+from multiprocessing import Pool
+from functools import partial
+from shutil import rmtree
 from irescue._version import __version__
 from irescue._genomes import __genomes__
 from irescue.misc import writerr, versiontuple, run_shell_cmd
@@ -7,10 +13,6 @@ from irescue.misc import check_requirement, check_tags
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat
 from irescue.map import checkIndex
 from irescue.count import split_barcodes, index_features, run_count, formatMM, writeEC
-import argparse, os, sys
-from multiprocessing import Pool
-from functools import partial
-from shutil import rmtree
 
 def parseArguments():
     parser = argparse.ArgumentParser(
@@ -23,26 +25,20 @@ def parseArguments():
         epilog="Home page: https://github.com/bodegalab/irescue"
     )
     parser.add_argument('-b', '--bam', required=True, metavar='FILE',
-                        help="scRNA-seq reads aligned to a reference genome "
-                        "(required).")
+                        help="scRNA-seq reads aligned to a reference genome (required).")
     parser.add_argument('-r', '--regions', metavar='FILE',
-                        help="Genomic TE coordinates in bed format. "
-                        "Takes priority over --genome (default: %(default)s).")
-    parser.add_argument('-g', '--genome', metavar='STR',
-                        choices=__genomes__.keys(),
+                        help="Genomic TE coordinates in bed format (at least 4 columns with TE feature name "
+                        "(e.g. subfamily) as the 4th column). Takes priority over --genome (default: %(default)s).")
+    parser.add_argument('-g', '--genome', metavar='STR', choices=__genomes__.keys(),
                         help="Genome assembly symbol. One of: {} (default: "
                         "%(default)s).".format(', '.join(__genomes__)))
     parser.add_argument('-w', '--whitelist', metavar='FILE',
-                        help="Text file of filtered cell barcodes by e.g. "
-                        "Cell Ranger, STARSolo or your gene expression "
-                        "quantifier of choice (Recommended. "
-                        "default: %(default)s).")
+                        help="Text file of filtered cell barcodes by e.g. Cell Ranger, STARSolo "
+                        "or your gene expression quantifier of choice (Recommended. default: %(default)s).")
     parser.add_argument('-c', '--cb-tag', default='CB', metavar='STR',
-                        help="BAM tag containing the cell barcode sequence "
-                        "(default: %(default)s).")
+                        help="BAM tag containing the cell barcode sequence (default: %(default)s).")
     parser.add_argument('-u', '--umi-tag', default='UR', metavar='STR',
-                        help="BAM tag containing the UMI sequence "
-                        "(default: %(default)s).")
+                        help="BAM tag containing the UMI sequence (default: %(default)s).")
     parser.add_argument('--no-umi', action='store_true',
                         help="Ignore UMI sequence (for UMI-less technologies, such as SMART-seq).")
     parser.add_argument('-p', '--threads', type=int, default=1, metavar='CPUS',
@@ -50,42 +46,30 @@ def parseArguments():
     parser.add_argument('-o', '--outdir', default='irescue_out', metavar='DIR',
                         help="Output directory name (default: %(default)s).")
     parser.add_argument('--min-bp-overlap', type=int, metavar='INT',
-                        help="Minimum overlap between read and TE as number "
-                        "of nucleotides (Default: disabled).")
-    parser.add_argument('--min-fraction-overlap', type=float, metavar='FLOAT',
-                        choices=[x/100 for x in range(101)],
-                        help="Minimum overlap between read and TE"
-                        " as a fraction of read's alignment"
+                        help="Minimum overlap between read and TE as number of nucleotides (Default: disabled).")
+    parser.add_argument('--min-fraction-overlap', type=float, metavar='FLOAT', choices=[x/100 for x in range(101)],
+                        help="Minimum overlap between read and TE as a fraction of read's alignment"
                         " (i.e. 0.00 <= NUM <= 1.00) (Default: disabled).")
     parser.add_argument('--max-iters', type=int, metavar='INT', default=100,
-                        help="Maximum number of EM iterations "
-                        "(Default: %(default)s).")
-    parser.add_argument('--tolerance', type=float, metavar='FLOAT',
-                        default=1e-4, help="Log-likelihood change below which "
-                        "convergence is assumed (Default: %(default)s).")
+                        help="Maximum number of EM iterations (Default: %(default)s).")
+    parser.add_argument('--tolerance', type=float, metavar='FLOAT', default=1e-4,
+                        help="Log-likelihood change below which convergence is assumed (Default: %(default)s).")
     parser.add_argument('--dump-ec', action='store_true',
-                        help="Write a description log file of Equivalence "
-                        "Classes.")
+                        help="Write a description log file of Equivalence Classes.")
     parser.add_argument('--integers', action='store_true',
-                        help="Use if integers count are needed for "
-                        "downstream analysis.")
+                        help="Use if integers count are needed for downstream analysis.")
     parser.add_argument('--samtools', default='samtools', metavar='PATH',
-                        help="Path to samtools binary, in case it's not in "
-                        "PATH (Default: %(default)s).")
+                        help="Path to samtools binary, in case it's not in PATH (Default: %(default)s).")
     parser.add_argument('--bedtools', default='bedtools', metavar='PATH',
-                        help="Path to bedtools binary, in case it's not in "
-                        "PATH (Default: %(default)s).")
+                        help="Path to bedtools binary, in case it's not in PATH (Default: %(default)s).")
     parser.add_argument('--no-tags-check', action='store_true',
-                        help="Suppress checking for CBtag and UMItag "
-                        "presence in BAM file.")
+                        help="Suppress checking for CBtag and UMItag presence in BAM file.")
     parser.add_argument('--keeptmp', action='store_true',
                         help="Keep temporary files under <output_dir>/tmp.")
     parser.add_argument('-v', '--verbose', action='count', default=0,
-                        help="Writes additional logging to stderr. "
-                        "Use once for normal verbosity (-v), "
+                        help="Writes additional logging to stderr. Use once for normal verbosity (-v), "
                         "twice for debugging (-vv).")
-    parser.add_argument('-V', '--version', action='version',
-                        version='%(prog)s {}'.format(__version__),
+    parser.add_argument('-V', '--version', action='version', version='%(prog)s {}'.format(__version__),
                         help="Print software's version and exit.")
     return parser
 
