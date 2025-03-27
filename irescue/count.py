@@ -209,16 +209,16 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
                         dump[x] += (dump[parent_][0], features[i])
 
     else: ## in case of UMI-less
-        for x in equivalence_classes:
-            feats = list(x.features)
+        for eqc in equivalence_classes:
+            feats = list(eqc.features)
             if len(feats) == 1:
-                    counts[feats[0]] += 1.0
+                counts[feats[0]] += 1.0
             else:
                 row = [1 if x in feats else 0
                     for x in range(1, number_of_features+1)]
                 em_array.append(row)
             if dumpEC:
-                dump[x.index] = x.to_tuple()
+                dump[eqc.index] = eqc.to_tuple()
     
     # EM stats placeholder in case of no multimapped UMIs
     em_stats = (None, None)
