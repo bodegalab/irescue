@@ -135,9 +135,6 @@ def main():
         check_tags(bamFile=args.bam, CBtag=args.cb_tag, UMItag=args.umi_tag,
                    nLines=999999, exit_with_error=True, verbose=args.verbose)
 
-    # Check if bam file is sorted by coordinate.
-    checkSort(args.bam, verbose=args.verbose)
-
     # Check for bam index file. If not present, will build an index.
     checkIndex(args.bam, verbose=args.verbose)
 
