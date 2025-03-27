@@ -206,14 +206,14 @@ def isec(bamFile, bedFile, whitelist, CBtag, UMItag, bpOverlap, fracOverlap,
     # UMIs with Ns and homopolymer UMIs
     if UMItag:
         stream += f' if(tags["{CBtag}"]~/^(|-)$/ || tags["{UMItag}"]~/.*N.*/ || '
-        stream += f' tags["{UMItag}"]~/^$|^(A+|G+|T+|C+)$/) {{next}}; '  
-    else:
-        stream += f' if(tags["{CBtag}"]~/^(|-)$/) {{next}}; '
-    # Append CB and UMI to read name
-    if UMItag:
+        stream += f' tags["{UMItag}"]~/^$|^(A+|G+|T+|C+)$/) {{next}}; '
+        # Append CB and UMI to read name
         stream += f' $1=$1"/"tags["{CBtag}"]"/"tags["{UMItag}"]; '
     else:
+        stream += f' if(tags["{CBtag}"]~/^(|-)$/) {{next}}; '
+        # Append CB to read name, and read name again (replacing UMI)
         stream += f' $1=$1"/"tags["{CBtag}"]"/"$1; '
+    # Append CB and UMI to read name
     stream += ' } '
     stream += ' { OFS="\\t"; print }\' | '
     stream += f' {samtools} view -u - | '
@@ -297,5 +297,5 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
             ' Check annotation and temporary files to troubleshoot.',
             error=True
         )
-    
+
     return mappings_file, barcodes_file, features_file
