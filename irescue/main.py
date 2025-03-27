@@ -5,7 +5,7 @@ from irescue._genomes import __genomes__
 from irescue.misc import writerr, versiontuple, run_shell_cmd
 from irescue.misc import check_requirement, check_tags
 from irescue.map import makeRmsk, getRefs, prepare_whitelist, isec, chrcat
-from irescue.map import checkIndex, checkSort
+from irescue.map import checkIndex
 from irescue.count import split_barcodes, index_features, run_count, formatMM, writeEC
 import argparse, os, sys
 from multiprocessing import Pool
@@ -192,7 +192,6 @@ def main():
     #########
 
     writerr("Running count step.")
-    
     # calculate number of mappings per process
     bc_per_thread = list(split_barcodes(barcodes_file, args.threads))
 
