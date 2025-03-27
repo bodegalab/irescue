@@ -170,7 +170,7 @@ def check_tags(
                     f"WARNING: Couldn't find {CBtag} "
                     f"{'and ' + UMItag + ' tags' if UMItag else 'tag'} "
                     f"in the first {c} records. Did you select the right tag? "
-                    "Continuing parsing bam until first occurrence..."
+                    "Continuing parsing BAM until first occurrence..."
                 )
             try:
                 if UMItag:
@@ -184,7 +184,6 @@ def check_tags(
                     writerr(
                         f"Found {CBtag} tag occurrence in BAM's line {c}."
                     )
-
                 return(True)
             except Exception:
                 c += 1
@@ -195,10 +194,14 @@ def check_tags(
             ERROR: Couldn't find {} in {}the BAM file.
             Check your BAM file for the presence of tags for cell barcode
             and UMI sequences, then provide them to IRescue through the {}.
-            If you expect not all alignments to contain the tag, you can
-            suppress this check with --no-tags-check
+
+            If your BAM files has cell barcodes but not UMIs (e.g. SMART-seq),
+            you should use the --no-umi flag.
+
+            If you do not expect that all alignments contain the tags, you can
+            suppress this check with --no-tags-check.
             """.format(
-                f"{CBtag} and {UMItag} tags" if UMItag else CBtag + ' tag',
+                f"{CBtag} and/or {UMItag} tags" if UMItag else CBtag + ' tag',
                 f"the first {nLines} lines of " if nLines else '',
                 '--CBtag and --UMItag flags' if UMItag else '--CBtag flag'
             ),
