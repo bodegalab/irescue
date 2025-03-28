@@ -45,14 +45,14 @@ If installing with `pip`, the following requirements must be installed manually:
 pip install irescue
 ```
 
-#### <a name="pre"><\a>Install a pre-release version
+#### <a name="pre"></a>Install a pre-release version
 
 You can install or upgrade to a pre-release using `pip`:
 ```bash
 pip install -U --pre irescue
 ```
 
-### <a name="src"><\a>Build from source
+### <a name="src"></a>Build from source
 
 By building the package directly from the source, you can try out the features and bug fixes that will be implemented in the future release. As above, you need to install some requirements manually. Be aware that builds from the development branches may be unstable.
 
@@ -89,17 +89,17 @@ Quick start:
 irescue -b genome_alignments.bam -g hg38
 ```
 
-### <a name="reqin"><\a>Required inputs
+### <a name="reqin"></a>Required inputs
 
 BAM file sorted by coordinate, indexed and annotated with cell barcode and, optionally, UMI sequences as tags (e.g. `CB` and `UR` tags, configurable with `--cb-tag` and `--umi-tag`)
 
 It can be obtained by aligning reads using [STARsolo](https://github.com/alexdobin/STAR/blob/master/docs/STARsolo.md). It is highly recommended to keep secondary alignments in BAM file, that will be used in the EM procedure to redistribute multi-mapping reads (at least `--outFilterMultimapNmax 100 --winAnchorMultimapNmax 100`), and remember to output all the needed SAM attributes (e.g. `--outSAMattributes NH HI AS nM NM MD jM jI XS MC ch cN CR CY UR UY GX GN CB UB sM sS sQ`).
 
-### <a name="annot"><\a>Custom annotation
+### <a name="annot"></a>Custom annotation
 
 A custom repeats annotation can be provided in BED format (e.g. `-r TE.bed`) of at least four columns, with the fourth column being the TE feature name (e.g. subfamily name).
 
-### <a name="noumi"><\a>UMI-less libraries (e.g. SMART-seq)
+### <a name="noumi"></a>UMI-less libraries (e.g. SMART-seq)
 
 **Only in pre-release version `1.2.0b2` or later.**
 
@@ -110,7 +110,7 @@ irescue -b genome_alignments.bam -g hg38 --no-umi
 
 NB: the BAM tag for cell barcodes sometimes is `RG` instead of `CB`. In such case, add the parameter `--cb-tag RG`.
 
-### <a name="best"><\a>Best practices
+### <a name="best"></a>Best practices
 
 - If you already obtained gene-level counts (using STARsolo, Cell Ranger, Alevin, Kallisto or other tools), it is advised to provide the whitelisted cell barcodes list as a text file (`-w barcodes.tsv`). This will significantly improve performance by processing viable cells only.
 
