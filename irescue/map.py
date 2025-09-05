@@ -21,8 +21,7 @@ def checkIndex(bamFile, verbose):
             except Exception as e:
                 writerr(
                     "ERROR: Couldn't index the BAM file. Is your BAM file "
-                    "sorted? If not, please sort it by coordinate "
-                    f"with `samtools index {bamFile}`.\n\n{e}",
+                    f"sorted? If not, please sort it by coordinate.\n\n{e}",
                     error=True
                 )
             else:
