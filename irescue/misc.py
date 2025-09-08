@@ -214,6 +214,7 @@ def get_ranges(num, div):
     """
     Splits an integer X into N integers whose sum is equal to X.
     """
+    div = num if div > num else div
     split = int(num/div)
     for i in range(0, num, split):
         j = i + split
