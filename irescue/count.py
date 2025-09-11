@@ -4,6 +4,7 @@ from collections import Counter
 from itertools import combinations
 import numpy as np
 import networkx as nx
+from scipy.sparse import lil_matrix, csr_matrix
 from irescue.misc import get_ranges, getlen, writerr, run_shell_cmd
 from irescue.network import build_substr_idx, gen_ec_pairs
 from irescue.em import run_em
@@ -100,7 +101,7 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
     """
     # initialize TE counts and dedup log
     counts = Counter()
-    em_array = []
+    em_array_rows = {}
     dump = {} if dumpEC else None
     number_of_features = len(features_index)
 
@@ -140,7 +141,7 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
                 # if no parents are found due to bidirected edges, take all nodes
                 # and the union of all features (i.e. all nodes are parents).
                 parents = list(subg.nodes)
-                features = [list(set.union(*[subg.nodes[x]['ft'] for x in subg]))]
+                features = [tuple(set.union(*[subg.nodes[x]['ft'] for x in subg]))]
             else:
                 # if parents node are found, features will be determined below.
                 features = None
@@ -150,7 +151,7 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
             # find paths starting from each parent node
             for parent in parents:
                 # populate this list with nodes utilized in paths
-                blacklist = []
+                blacklist = set()
                 # find paths in list of nodes starting from parent
                 path = []
                 subg_copy = subg.copy()
@@ -161,7 +162,7 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
                     if node not in blacklist:
                         path = pathfinder(subg_copy, node, path=[], features=None)
                         for x in path:
-                            blacklist.append(x)
+                            blacklist.add(x)
                             subg_copy.remove_node(x)
                         paths[parent].append(path)
             # find the path configuration leading to the minimum number of
@@ -172,7 +173,7 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
             ][0]
             if not features:
                 # take features from parent node of selected path configuration
-                features = [list(subg.nodes[x[0]]['ft']) for x in path_config]
+                features = [tuple(subg.nodes[x[0]]['ft']) for x in path_config]
             else:
                 # if features was already determined (i.e. no parent nodes),
                 # multiplicate the feature's list by the number of paths
@@ -183,9 +184,7 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
                 if len(feats) == 1:
                     counts[feats[0]] += 1.0
                 elif len(feats) > 1:
-                    row = [1 if x in feats else 0
-                        for x in range(1, number_of_features+1)]
-                    em_array.append(row)
+                    em_array_rows[len(em_array_rows)] = feats
                 else:
                     writerr(nx.to_dict_of_lists(subg))
                     writerr([subg.nodes[x]['ft'] for x in subg.nodes])
@@ -214,30 +213,37 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
             if len(feats) == 1:
                 counts[feats[0]] += 1.0
             else:
-                row = [1 if x in feats else 0
-                    for x in range(1, number_of_features+1)]
-                em_array.append(row)
+                em_array_rows[len(em_array_rows)] = feats
             if dumpEC:
                 dump[eqc.index] = eqc.to_tuple()
     
     # EM stats placeholder in case of no multimapped UMIs
     em_stats = (None, None, None, None)
-    if em_array:
+    em_array = None
+                            
+    if em_array_rows:
         # optimize the assignment of UMI from multimapping reads
-        em_array = np.array(em_array)
+        em_array = lil_matrix((len(em_array_rows), number_of_features), dtype = np.uint8)
+        
+        for i, feats in em_array_rows.items():
+            em_array.rows[i] = [feat_idx - 1 for feat_idx in feats]
+            em_array.data[i] = [1] * len(em_array.rows[i])
+            
+        em_array = em_array.tocsr()
+        
         # save an array with features > 0, as in em_array order
-        tokeep = np.argwhere(np.any(em_array[..., :] > 0, axis=0))[:,0] + 1
+        tokeep = np.flatnonzero(em_array.sum(axis = 0))
         # remove unmapped features from em_array
-        todel = np.argwhere(np.all(em_array[..., :] == 0, axis=0))
-        em_array = np.delete(em_array, todel, axis=1)
+        em_array = em_array[:, tokeep]
         # run EM
         em_counts, em_stats = run_em(
             em_array,
             cycles=max_iters,
             tolerance=tolerance
         )
-        em_counts = [x*em_array.shape[0] for x in em_counts]
-        for i, c in zip(tokeep, em_counts):
+        em_counts = em_counts*em_array.shape[0]
+        
+        for i, c in zip(tokeep + 1, em_counts):
             if c > 0:
                 counts[i] += c
     return dict(counts), dump, em_stats
