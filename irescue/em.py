@@ -1,12 +1,13 @@
 import numpy as np
+from scipy.sparse import csr_matrix
 
 def e_step(matrix, counts):
     """
     Performs E-step of EM algorithm: proportionally assigns reads to features
     based on relative feature abundances.
     """
-    colsums = (matrix * counts).sum(axis=1)[:, np.newaxis]
-    out = matrix / colsums * counts
+    colsums = matrix.dot(counts)[:, np.newaxis]
+    out = (matrix / colsums).multiply(counts)
     return(out)
 
 def m_step(matrix):
@@ -14,14 +15,14 @@ def m_step(matrix):
     Performs M-step of EM algorithm: calculates feature abundances from read
     counts proportionally distributed to features.
     """
-    counts = matrix.sum(axis=0) / matrix.sum()
+    counts = np.ravel(matrix.sum(axis=0) / matrix.sum())
     return(counts)
 
 def log_likelihood(matrix, counts):
     """
     Compute log-likelihood of data.
     """
-    likelihoods = (matrix * counts).sum(axis=1)
+    likelihoods = matrix.dot(counts)
     log_likelihood = np.sum(np.log(likelihoods + np.finfo(float).eps))
     return log_likelihood
 
@@ -53,7 +54,7 @@ def run_em(matrix, cycles=100, tolerance=1e-5):
     # (let the sum of counts of features be 1,
     # will be multiplied by the real UMI count later)
     nFeatures = matrix.shape[1]
-    counts = np.array([1 / nFeatures] * nFeatures)
+    counts = np.full(shape = nFeatures, fill_value = 1/nFeatures)
 
     # Initial log-likelihood
     prev_loglik = log_likelihood(matrix, counts)
