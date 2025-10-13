@@ -55,7 +55,6 @@ jobs:
         if: failure()
         shell: bash -el {0}
         run: |
-          set -e
           echo "=== Environment Variables ==="
           env | tee /home/runner/pytest_workflow_env.log
           echo "=== Logs ==="
