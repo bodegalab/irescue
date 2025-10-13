@@ -29,11 +29,12 @@
 
 from collections import defaultdict
 
+
 def get_substr_slices(umi_length, idx_size):
-    '''
+    """
     Create slices to split a UMI into approximately equal size substrings
     Returns a list of tuples that can be passed to slice function
-    '''
+    """
     cs, r = divmod(umi_length, idx_size)
     sub_sizes = [cs + 1] * r + [cs] * (idx_size - r)
     offset = 0
@@ -43,11 +44,12 @@ def get_substr_slices(umi_length, idx_size):
         offset += s
     return slices
 
+
 def build_substr_idx(equivalence_classes, length, threshold):
-    '''
+    """
     Group equivalence classes into subgroups having a common substring
-    '''
-    slices = get_substr_slices(length, threshold+1)
+    """
+    slices = get_substr_slices(length, threshold + 1)
     substr_idx = {k: defaultdict(set) for k in slices}
     for idx in slices:
         for ec in equivalence_classes:
@@ -55,10 +57,11 @@ def build_substr_idx(equivalence_classes, length, threshold):
             substr_idx[idx][sub].add(ec)
     return substr_idx
 
+
 def gen_ec_pairs(equivalence_classes, substr_idx):
-    '''
+    """
     Yields equivalence classes pairs from build_substr_idx()
-    '''
+    """
     for i, ec in enumerate(equivalence_classes, start=1):
         neighbours = set()
         for idx, substr_map in substr_idx.items():

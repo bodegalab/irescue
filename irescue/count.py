@@ -1,36 +1,41 @@
 #!/usr/bin/env python
 
-from collections import Counter
-from itertools import combinations
-import numpy as np
-import networkx as nx
-from scipy.sparse import lil_matrix, csr_matrix
-from irescue.misc import get_ranges, getlen, writerr, run_shell_cmd
-from irescue.network import build_substr_idx, gen_ec_pairs
-from irescue.em import run_em
 import gzip
 import os
+from collections import Counter
+from itertools import combinations
+
+import networkx as nx
+import numpy as np
+from scipy.sparse import csr_matrix, lil_matrix
+
+from irescue.em import run_em
+from irescue.misc import get_ranges, getlen, run_shell_cmd, writerr
+from irescue.network import build_substr_idx, gen_ec_pairs
+
 
 class EquivalenceClass:
     def __init__(
-            self,
-            index: int,
-            umi: bytes,
-            features: set,
-            count: int
+        self, index: int, umi: bytes, features: set, count: int
     ) -> None:
         self.index = index
         self.umi = umi
         self.features = features
         self.count = count
+
     def to_tuple(self):
         return (self.umi, self.features, self.count)
+
     def hdist(self, umi):
         return sum(1 for i, j in zip(self.umi, umi) if i != j)
+
     def connect(self, eqc, threshold):
-        return (self.count >= (2 * eqc.count) - 1
-                and self.features.intersection(eqc.features)
-                and self.hdist(eqc.umi) <= threshold)
+        return (
+            self.count >= (2 * eqc.count) - 1
+            and self.features.intersection(eqc.features)
+            and self.hdist(eqc.umi) <= threshold
+        )
+
 
 def pathfinder(graph, node, path=[], features=None):
     """
@@ -38,21 +43,25 @@ def pathfinder(graph, node, path=[], features=None):
     a starting node. Can be used iteratively to find all possible paths.
     """
     if not features:
-        features = graph.nodes[node]['ft']
+        features = graph.nodes[node]["ft"]
     path += [node]
     for next_node in graph.successors(node):
-        if (features.intersection(graph.nodes[next_node]['ft'])
-            and next_node not in path):
+        if (
+            features.intersection(graph.nodes[next_node]["ft"])
+            and next_node not in path
+        ):
             path = pathfinder(graph, next_node, path, features)
     return path
 
+
 def index_features(features_file):
     idx = {}
-    with gzip.open(features_file, 'rb') as f:
+    with gzip.open(features_file, "rb") as f:
         for i, line in enumerate(f, start=1):
-            ft = line.strip().split(b'\t')[0]
+            ft = line.strip().split(b"\t")[0]
             idx[ft] = i
     return idx
+
 
 def parse_maps(maps_file, feature_index):
     """
@@ -62,17 +71,17 @@ def parse_maps(maps_file, feature_index):
         CB,
         [(UMI <str>, {FT <int>, ...} <set>, count <int>) <tuple>, ...]
     """
-    with gzip.open(maps_file, 'rb') as f:
-        cb, umi, feat, count = f.readline().strip().split(b'\t')
+    with gzip.open(maps_file, "rb") as f:
+        cb, umi, feat, count = f.readline().strip().split(b"\t")
         i = 0
         it = cb
         count = int(count)
-        feat = {feature_index[ft] for ft in feat.split(b',')}
+        feat = {feature_index[ft] for ft in feat.split(b",")}
         eqcl = [EquivalenceClass(i, umi, feat, count)]
         for line in f:
-            cb, umi, feat, count = line.strip().split(b'\t')
+            cb, umi, feat, count = line.strip().split(b"\t")
             count = int(count)
-            feat = {feature_index[ft] for ft in feat.split(b',')}
+            feat = {feature_index[ft] for ft in feat.split(b",")}
             if cb == it:
                 i += 1
                 eqcl.append(EquivalenceClass(i, umi, feat, count))
@@ -83,8 +92,10 @@ def parse_maps(maps_file, feature_index):
                 eqcl = [EquivalenceClass(i, umi, feat, count)]
         yield it, eqcl
 
-def compute_cell_counts(equivalence_classes, features_index, max_iters,
-                        tolerance, dumpEC, no_umi):
+
+def compute_cell_counts(
+    equivalence_classes, features_index, max_iters, tolerance, dumpEC, no_umi
+):
     """
     Calculate TE counts of a single cell, given a list of equivalence classes.
 
@@ -105,13 +116,16 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
     dump = {} if dumpEC else None
     number_of_features = len(features_index)
 
+    # With UMIs (10X-like datasets)
     if not no_umi:
         # build cell-wide UMI deduplication graph
         graph = nx.DiGraph()
         # add nodes with annotated features
         graph.add_nodes_from(
-            [(x.index, {'ft': x.features, 'c': x.count})
-            for x in equivalence_classes]
+            [
+                (x.index, {"ft": x.features, "c": x.count})
+                for x in equivalence_classes
+            ]
         )
         # make an iterator of umi pairs
         if len(equivalence_classes) > 25:
@@ -130,9 +144,11 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
             # collect graph metadata in a dictionary
             dump = {i: equivalence_classes[i].to_tuple() for i in graph.nodes}
         # split cell-wide graph into subgraphs of connected nodes
-        subgraphs = [graph.subgraph(x) for x in
-                    nx.connected_components(graph.to_undirected())]
-        
+        subgraphs = [
+            graph.subgraph(x)
+            for x in nx.connected_components(graph.to_undirected())
+        ]
+
         # solve UMI deduplication for each subgraph of connected nodes
         for subg in subgraphs:
             # find all parent nodes in graph
@@ -141,7 +157,9 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
                 # if no parents are found due to bidirected edges, take all nodes
                 # and the union of all features (i.e. all nodes are parents).
                 parents = list(subg.nodes)
-                features = [tuple(set.union(*[subg.nodes[x]['ft'] for x in subg]))]
+                features = [
+                    tuple(set.union(*[subg.nodes[x]["ft"] for x in subg]))
+                ]
             else:
                 # if parents node are found, features will be determined below.
                 features = None
@@ -160,7 +178,9 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
                     # make a copy of subgraph and remove nodes already used
                     # in a path
                     if node not in blacklist:
-                        path = pathfinder(subg_copy, node, path=[], features=None)
+                        path = pathfinder(
+                            subg_copy, node, path=[], features=None
+                        )
                         for x in path:
                             blacklist.add(x)
                             subg_copy.remove_node(x)
@@ -168,12 +188,13 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
             # find the path configuration leading to the minimum number of
             # deduplicated UMIs -> list of lists of nodes
             path_config = [
-                paths[k] for k, v in paths.items()
+                paths[k]
+                for k, v in paths.items()
                 if len(v) == min([len(x) for x in paths.values()])
             ][0]
             if not features:
                 # take features from parent node of selected path configuration
-                features = [tuple(subg.nodes[x[0]]['ft']) for x in path_config]
+                features = [tuple(subg.nodes[x[0]]["ft"]) for x in path_config]
             else:
                 # if features was already determined (i.e. no parent nodes),
                 # multiplicate the feature's list by the number of paths
@@ -187,27 +208,31 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
                     em_array_rows[len(em_array_rows)] = feats
                 else:
                     writerr(nx.to_dict_of_lists(subg))
-                    writerr([subg.nodes[x]['ft'] for x in subg.nodes])
-                    writerr([subg.nodes[x]['c'] for x in subg.nodes])
+                    writerr([subg.nodes[x]["ft"] for x in subg.nodes])
+                    writerr([subg.nodes[x]["c"] for x in subg.nodes])
                     writerr(path_config)
                     writerr(path)
                     writerr(features)
                     writerr(feats)
-                    writerr("Error: no common features detected in subgraph's"
-                            " path.", error=True)
+                    writerr(
+                        "Error: no common features detected in subgraph's"
+                        " path.",
+                        error=True,
+                    )
             # add EC log to dump
             if dumpEC:
                 for i, path_ in enumerate(path_config):
                     # add empty fields to parent node
                     parent_ = path_[0]
                     path_.pop(0)
-                    dump[parent_] += (b'', b'')
+                    dump[parent_] += (b"", b"")
                     # if child nodes are present, add parent node informations
                     for x in path_:
                         # add parent's UMI sequence and dedup features
                         dump[x] += (dump[parent_][0], features[i])
 
-    else: ## in case of UMI-less
+    # Without UMIs (Smart-seq-like datasets)
+    else:
         for eqc in equivalence_classes:
             feats = list(eqc.features)
             if len(feats) == 1:
@@ -216,37 +241,38 @@ def compute_cell_counts(equivalence_classes, features_index, max_iters,
                 em_array_rows[len(em_array_rows)] = feats
             if dumpEC:
                 dump[eqc.index] = eqc.to_tuple()
-    
+
     # EM stats placeholder in case of no multimapped UMIs
     em_stats = (None, None, None, None)
     em_array = None
-                            
+
     if em_array_rows:
         # optimize the assignment of UMI from multimapping reads
-        em_array = lil_matrix((len(em_array_rows), number_of_features), dtype = np.uint8)
-        
+        em_array = lil_matrix(
+            (len(em_array_rows), number_of_features), dtype=np.uint8
+        )
+
         for i, feats in em_array_rows.items():
             em_array.rows[i] = [feat_idx - 1 for feat_idx in feats]
             em_array.data[i] = [1] * len(em_array.rows[i])
-            
+
         em_array = em_array.tocsr()
-        
+
         # save an array with features > 0, as in em_array order
-        tokeep = np.flatnonzero(em_array.sum(axis = 0))
+        tokeep = np.flatnonzero(em_array.sum(axis=0))
         # remove unmapped features from em_array
         em_array = em_array[:, tokeep]
         # run EM
         em_counts, em_stats = run_em(
-            em_array,
-            cycles=max_iters,
-            tolerance=tolerance
+            em_array, cycles=max_iters, tolerance=tolerance
         )
-        em_counts = em_counts*em_array.shape[0]
-        
+        em_counts = em_counts * em_array.shape[0]
+
         for i, c in zip(tokeep + 1, em_counts):
             if c > 0:
                 counts[i] += c
     return dict(counts), dump, em_stats
+
 
 def split_barcodes(barcodes_file, n):
     """
@@ -256,27 +282,39 @@ def split_barcodes(barcodes_file, n):
     out : int, dict
     """
     nBarcodes = getlen(barcodes_file)
-    with gzip.open(barcodes_file, 'rb') as f:
+    with gzip.open(barcodes_file, "rb") as f:
         for i, chunk in enumerate(get_ranges(nBarcodes, n)):
-            yield i, {next(f).strip(): x+1 for x in chunk}
+            yield i, {next(f).strip(): x + 1 for x in chunk}
 
-def run_count(maps_file, features_index, tmpdir, no_umi, dumpEC, max_iters,
-              tolerance, verbose, barcodes_set):
+
+def run_count(
+    maps_file,
+    features_index,
+    tmpdir,
+    no_umi,
+    dumpEC,
+    max_iters,
+    tolerance,
+    verbose,
+    barcodes_set,
+):
     # NB: keep args order consistent with main.countFun
     taskn, barcodes = barcodes_set
-    matrix_file = os.path.join(tmpdir, f'{taskn}_matrix.mtx.gz')
-    dump_file = os.path.join(tmpdir, f'{taskn}_EqCdump.tsv.gz')
-    with gzip.open(matrix_file, 'wb') as f, \
-            gzip.open(dump_file, 'wb') if dumpEC \
-            else gzip.open(os.devnull) as df:
+    matrix_file = os.path.join(tmpdir, f"{taskn}_matrix.mtx.gz")
+    dump_file = os.path.join(tmpdir, f"{taskn}_EqCdump.tsv.gz")
+    with (
+        gzip.open(matrix_file, "wb") as f,
+        gzip.open(dump_file, "wb") if dumpEC else gzip.open(os.devnull) as df,
+    ):
         for cellbarcode, cellmaps in parse_maps(maps_file, features_index):
             if cellbarcode not in barcodes:
                 continue
             cellidx = barcodes[cellbarcode]
             writerr(
-                f'[{taskn}] Run count for cell '
-                f'{cellidx} ({cellbarcode.decode()})',
-                level=2, send=verbose
+                f"[{taskn}] Run count for cell "
+                f"{cellidx} ({cellbarcode.decode()})",
+                level=2,
+                send=verbose,
             )
             cellcounts, dump, em_stats = compute_cell_counts(
                 equivalence_classes=cellmaps,
@@ -284,103 +322,132 @@ def run_count(maps_file, features_index, tmpdir, no_umi, dumpEC, max_iters,
                 max_iters=max_iters,
                 tolerance=tolerance,
                 dumpEC=dumpEC,
-                no_umi=no_umi
+                no_umi=no_umi,
             )
             writerr(
                 f"[{taskn}] Write cell {cellidx} ({cellbarcode.decode()}). "
                 f"EM cycles: {em_stats[0]}. Converged: {em_stats[1]}. "
                 f"Log likelihood: {em_stats[2]}. Increment: {em_stats[3]}.",
-                level=1, send=verbose
+                level=1,
+                send=verbose,
             )
             # round counts to 3rd decimal point and write to matrix file
             # only if count is at least 0.001
-            lines = [f'{feature} {cellidx} {round(count, 3)}\n'.encode()
-                     for feature, count in cellcounts.items()
-                     if count >= 0.001]
+            lines = [
+                f"{feature} {cellidx} {round(count, 3)}\n".encode()
+                for feature, count in cellcounts.items()
+                if count >= 0.001
+            ]
             f.writelines(lines)
             if dumpEC:
                 writerr(
-                    f'[{taskn}] Write ECdump for cell '
-                    f'{cellidx} ({cellbarcode.decode()})',
-                    level=1, send=verbose
+                    f"[{taskn}] Write ECdump for cell "
+                    f"{cellidx} ({cellbarcode.decode()})",
+                    level=1,
+                    send=verbose,
                 )
                 # reverse features index to get names back
-                findex = dict(zip(features_index.values(),
-                                  features_index.keys()))
-                
+                findex = dict(
+                    zip(features_index.values(), features_index.keys())
+                )
+
                 if not no_umi:
                     dumplines = [
-                        b'\t'.join(
-                            [str(cellidx).encode(),
-                            cellbarcode,
-                            str(i).encode(),
+                        b"\t".join(
+                            [
+                                str(cellidx).encode(),
+                                cellbarcode,
+                                str(i).encode(),
+                                umi,
+                                b",".join([findex[f] for f in feats]),
+                                str(count).encode(),
+                                pumi,
+                                b",".join([findex[f] for f in pfeats]),
+                            ]
+                        )
+                        + b"\n"
+                        for i, (
                             umi,
-                            b','.join([findex[f] for f in feats]),
-                            str(count).encode(),
+                            feats,
+                            count,
                             pumi,
-                            b','.join([findex[f] for f in pfeats])]
-                        ) + b'\n'
-                        for i, (umi, feats, count, pumi, pfeats) in dump.items()
+                            pfeats,
+                        ) in dump.items()
                     ]
                 else:
                     dumplines = [
-                        b'\t'.join(
-                            [str(cellidx).encode(),
-                            cellbarcode,
-                            str(i).encode(),
-                            readname,
-                            b','.join([findex[f] for f in feats]),
-                            str(count).encode()]
-                        ) + b'\n'
+                        b"\t".join(
+                            [
+                                str(cellidx).encode(),
+                                cellbarcode,
+                                str(i).encode(),
+                                readname,
+                                b",".join([findex[f] for f in feats]),
+                                str(count).encode(),
+                            ]
+                        )
+                        + b"\n"
                         for i, (readname, feats, count) in dump.items()
                     ]
                 df.writelines(dumplines)
     return matrix_file, dump_file
 
+
 def formatMM(matrix_files, feature_index, barcodes_chunks, outdir):
     if type(matrix_files) is str:
         matrix_files = [matrix_files]
-    matrix_out = os.path.join(outdir, 'matrix.mtx.gz')
+    matrix_out = os.path.join(outdir, "matrix.mtx.gz")
     features_count = len(feature_index)
     barcodes_count = sum(len(x) for _, x in barcodes_chunks)
     mmsize = sum(getlen(f) for f in matrix_files)
-    mmheader = b'%%MatrixMarket matrix coordinate real general\n'
-    mmtotal = f'{features_count} {barcodes_count} {mmsize}\n'.encode()
-    with gzip.GzipFile(matrix_out, 'wb', mtime=0) as mmout:
+    mmheader = b"%%MatrixMarket matrix coordinate real general\n"
+    mmtotal = f"{features_count} {barcodes_count} {mmsize}\n".encode()
+    with gzip.GzipFile(matrix_out, "wb", mtime=0) as mmout:
         mmout.write(mmheader)
         mmout.write(mmtotal)
-    mtxstr = ' '.join(matrix_files)
-    cmd = f'zcat {mtxstr} | LC_ALL=C sort -k2,2n -k1,1n | gzip >> {matrix_out}'
+    mtxstr = " ".join(matrix_files)
+    cmd = f"zcat {mtxstr} | LC_ALL=C sort -k2,2n -k1,1n | gzip >> {matrix_out}"
     run_shell_cmd(cmd)
-    return(matrix_out)
+    return matrix_out
+
 
 def writeEC(ecdump_files, no_umi, outdir):
     if type(ecdump_files) is str:
         ecdump_files = [ecdump_files]
-    ecdump_out = os.path.join(outdir, 'ec_dump.tsv.gz')
-    ecdumpstr = ' '.join(ecdump_files)
+    ecdump_out = os.path.join(outdir, "ec_dump.tsv.gz")
+    ecdumpstr = " ".join(ecdump_files)
     if not no_umi:
-        header = '\t'.join([
-            'Barcode_id',
-            'Barcode',
-            'EqClass',
-            'UMI',
-            'Features',
-            'Read_count',
-            'Dedup_UMI',
-            'Dedup_feature'
-        ]) + '\n'
+        header = (
+            "\t".join(
+                [
+                    "Barcode_id",
+                    "Barcode",
+                    "EqClass",
+                    "UMI",
+                    "Features",
+                    "Read_count",
+                    "Dedup_UMI",
+                    "Dedup_feature",
+                ]
+            )
+            + "\n"
+        )
     else:
-        header = '\t'.join([
-            'Barcode_id',
-            'Barcode',
-            'EqClass',
-            'Read_name',
-            'Features',
-            'Read_count'
-        ]) + '\n'
-    with gzip.GzipFile(ecdump_out, 'wb', mtime=0) as f:
+        header = (
+            "\t".join(
+                [
+                    "Barcode_id",
+                    "Barcode",
+                    "EqClass",
+                    "Read_name",
+                    "Features",
+                    "Read_count",
+                ]
+            )
+            + "\n"
+        )
+    with gzip.GzipFile(ecdump_out, "wb", mtime=0) as f:
         f.write(header.encode())
-    cmd = f'zcat {ecdumpstr} | LC_ALL=C sort -k1,1n -k3,3n | gzip >> {ecdump_out}'
+    cmd = f"zcat {ecdumpstr} | LC_ALL=C sort -k1,1n -k3,3n | gzip >> {ecdump_out}"
     run_shell_cmd(cmd)
     return ecdump_out
