@@ -48,7 +48,7 @@ jobs:
         if: success()
         shell: bash -el {0}
         run: |
-          pip install pipdeptree
+          pip install --no-cache-dir pipdeptree
           pipdeptree
 
       - name: Output log on failure
