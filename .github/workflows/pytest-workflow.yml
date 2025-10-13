@@ -44,6 +44,13 @@ jobs:
         shell: bash -el {0}
         run: TMPDIR=~ pytest --symlink --kwdof --git-aware --color=yes
 
+      - name: Output dependency tree
+        if: success()
+        shell: bash -el {0}
+        run: |
+          pip install pipdeptree
+          pipdeptree
+
       - name: Output log on failure
         if: failure()
         shell: bash -el {0}
