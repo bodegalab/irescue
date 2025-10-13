@@ -26,7 +26,7 @@ def log_likelihood(matrix, counts):
     log_likelihood = np.sum(np.log(likelihoods + np.finfo(float).eps))
     return log_likelihood
 
-def run_em(matrix, cycles=100, tolerance=1e-5):
+def run_em(matrix, cycles=100, tolerance=1e-4):
     """
     Run Expectation-Maximization (EM) algorithm to redistribute read counts
     across a set of features.
