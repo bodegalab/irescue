@@ -7,7 +7,7 @@ from itertools import combinations
 
 import networkx as nx
 import numpy as np
-from scipy.sparse import csr_matrix, lil_matrix
+from scipy.sparse import lil_matrix
 
 from irescue.em import run_em
 from irescue.misc import get_ranges, getlen, run_shell_cmd, writerr
