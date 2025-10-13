@@ -55,21 +55,28 @@ jobs:
         if: failure()
         shell: bash -el {0}
         run: |
-          cat /home/runner/pytest_workflow_*/*/log.{out,err}
-          env
-          which bedtools && bedtools --version
-          which samtools && samtools --version
-          which python && python --version
-          conda list -n test
+          set -e
+          echo "=== Environment Variables ==="
+          env | tee /home/runner/pytest_workflow_env.log
+          echo "=== Logs ==="
+          cat /home/runner/pytest_workflow_*/*/log.{out,err} | tee /home/runner/pytest_workflow_combined.log
+          echo "=== Tool Versions ==="
+          if command -v bedtools; then bedtools --version; else echo "bedtools not found"; fi
+          if command -v samtools; then samtools --version; else echo "samtools not found"; fi
+          if command -v python; then python --version; else echo "python not found"; fi
+          conda list -n test | tee /home/runner/pytest_workflow_conda_list.log
 
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v4.6.0
         with:
-          name: artifact_py${{matrix.python-version}}
+          name: pytest_logs_py${{matrix.python-version}}_${{ github.run_id }}
           path: |
             /home/runner/pytest_workflow_*/*/log.out
             /home/runner/pytest_workflow_*/*/log.err
             /home/runner/pytest_workflow_*/*/IRescue_out
             /home/runner/pytest_workflow_*/*/IRescue_tmp
+            /home/runner/pytest_workflow_env.log
+            /home/runner/pytest_workflow_combined.log
+            /home/runner/pytest_workflow_conda_list.log
           include-hidden-files: true
