@@ -15,10 +15,11 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     name: test
     strategy:
       matrix:
+        # Python versions to add/remove: https://devguide.python.org/versions/
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
     steps:
       - name: Checkout
