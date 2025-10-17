@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "IRescue"
 description = "Uncertainty-aware quantification of transposable elements expression in scRNA-seq"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [
     { name = "Benedetto Polimeni", email = "polimeni@ingm.org" },
@@ -19,22 +19,24 @@ keywords = [
     "single-cell-rna-seq",
 ]
 classifiers = [
-    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.9",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "numpy >= 1.20.2",
-    "pysam >= 0.16.0.1",
-    "requests >= 2.27.1",
-    "networkx >= 3.1",
-    "scipy >= 1.11.4"
+    "numpy >=1.21, <3",
+    "pysam >=0.17, <1",
+    "requests >=2.25, <3",
+    "networkx >=2.6, <4",
+    "scipy >=1.6, <2"
 ]
 dynamic = ["version"]
 
