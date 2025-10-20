@@ -104,9 +104,9 @@
     - path: "irescue_out/counts/matrix.mtx.gz"
       md5sum: b4fe9404c3ac7d1adca714978a0996fe
     - path: "irescue_out/ec_dump.tsv.gz"
-      md5sum: 5e588257bf1c811fc90ff91d425e7d5d
+      md5sum: 83849eb8b9db0b724a3a180317b40494
     - path: "irescue_out/tmp/mappings.tsv.gz"
-      md5sum: 3d0ced7e7db679f511583b3a3c4e7cf7
+      md5sum: 71b401e1091aa61684096f4780998c90
 
 - name: no_umi
   tags:
