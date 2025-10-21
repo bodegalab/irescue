@@ -10,8 +10,8 @@ from pysam import AlignmentFile, idxstats, index
 from irescue.misc import getlen, run_shell_cmd, testGz, unGzip, writerr
 
 
-# Check if bam file is indexed
 def checkIndex(bamFile, verbose):
+    """Check if BAM file is indexed. If not, attempt to index it."""
     with AlignmentFile(bamFile) as bam:
         if not bam.has_index():
             writerr("BAM index not found. Attempting to index the BAM...")
@@ -34,9 +34,27 @@ def checkIndex(bamFile, verbose):
                 )
 
 
-# Check repeatmasker regions bed file format. Download if not provided.
-# Returns the path of the repeatmasker bed file.
-def makeRmsk(regions, genome, genomes, tmpdir, outname):
+def makeRmsk(regions, genome, genomes, tmpdir, outname="rmsk.bed"):
+    """Format and/or download RepeatMasker annotation.
+
+    Check repeatmasker regions bed file format. Download if not provided.
+    Returns the path of the repeatmasker bed file.
+
+    Args:
+        regions (str): Path to repeatmasker bed file.
+            Takes priority over genome.
+        genome (str): Genome assembly name.
+        genomes (dict): Dictionary of genome assembly names and URLs.
+        tmpdir (str): Path to temporary directory.
+        outname (str): Name of the output repeatmasker bed file.
+
+    Returns:
+        str: Path to the repeatmasker bed file.
+    
+    Raises:
+        SystemExit: If neither regions nor genome is provided, or if the
+                    regions file is not properly formatted.
+    """
     # if a repeatmasker bed file is provided, use that
     if regions:
         if testGz(regions):
@@ -125,17 +143,21 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
     return out
 
 
-# Uncompress the whitelist file if compressed.
-# Return the whitelist path, or False if not using a whitelist.
 def prepare_whitelist(whitelist, tmpdir):
+    """Uncompress the whitelist file if compressed.
+    Return the whitelist path, or False if not using a whitelist.
+    """
     if whitelist and testGz(whitelist):
         wlout = os.path.join(tmpdir, "whitelist.tsv")
         whitelist = unGzip(whitelist, wlout)
     return whitelist
 
 
-# Get list of reference names from BAM file, skipping those without reads.
 def getRefs(bamFile, bedFile):
+    """Get list of reference names from BAM file, skips those without reads
+    and checks their presence in the TE annotation bed file.
+    Returns the list of reference names to process.
+    """
     chrNames = list()
     for line in idxstats(bamFile).strip().split("\n"):
         fields = line.strip().split("\t")
@@ -172,7 +194,6 @@ def getRefs(bamFile, bedFile):
         )
 
 
-# Intersect reads with repeatmasker regions. Return the intersection file path.
 def isec(
     bamFile,
     bedFile,
@@ -188,6 +209,11 @@ def isec(
     verbose,
     chrom,
 ):
+    """
+    Intersect alignments from bamFile with features from bedFile for a
+    specific chromosome (chrom). Return the path of the intersection file.
+    Intended for parallelization by chromosome.
+    """
     refdir = os.path.join(tmpdir, "refs")
     isecdir = os.path.join(tmpdir, "isec")
     os.makedirs(refdir, exist_ok=True)
