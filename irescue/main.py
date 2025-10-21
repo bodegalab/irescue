@@ -139,6 +139,18 @@ def parseArguments():
         ),
     )
     parser.add_argument(
+        "--strandedness",
+        type=str,
+        metavar="STR",
+        choices=["unstranded", "forward", "reverse"],
+        default="unstranded",
+        help=(
+            "Library strandedness. "
+            "Use only if the orientation of TEs is relevant. "
+            "One of: unstranded, forward, reverse (default: %(default)s)."
+        ),
+    )
+    parser.add_argument(
         "--max-iters",
         type=int,
         metavar="INT",
@@ -312,6 +324,7 @@ def main():
         args.umi_tag,
         args.min_bp_overlap,
         args.min_fraction_overlap,
+        args.strandedness,
         dirs["tmp"],
         args.samtools,
         args.bedtools,

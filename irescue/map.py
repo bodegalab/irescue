@@ -181,6 +181,7 @@ def isec(
     UMItag,
     bpOverlap,
     fracOverlap,
+    strandedness,
     tmpdir,
     samtools,
     bedtools,
@@ -233,9 +234,18 @@ def isec(
     # filter by minimum overlap between read and feature, if set
     ovfrac = f" -f {fracOverlap} " if fracOverlap else ""
     ovbp = f" $NF>={bpOverlap} " if bpOverlap else ""
+    
+    # strand-specific intersection
+    strandedness = strandedness.lower()
+    if strandedness == 'forward':
+        strand = " -s "
+    elif strandedness == 'reverse':
+        strand = " -S "
+    else:
+        strand = ""
 
     # intersection command
-    cmd = f"{bedtools} intersect -a {stream} -b {refFile} "
+    cmd = f"{bedtools} intersect -a {stream} -b {refFile} {strand}"
     cmd += f' -split -bed -wo -sorted {ovfrac} | gawk -vOFS="\\t" \'{ovbp} '
     # remove mate information from read name
     cmd += ' { sub(/\\/[12]$/,"",$4); '
