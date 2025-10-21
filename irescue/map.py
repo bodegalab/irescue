@@ -68,9 +68,9 @@ def makeRmsk(
             return x.readline().decode() if decode else x.readline()
 
         # skip header
-        line = rl(f, is_gz)
+        line = rl(f, decode=is_gz)
         while line[0] == "#":
-            line = rl(f, is_gz)
+            line = rl(f, decode=is_gz)
         # check for minimum column number
         if len(line.strip().split("\t")) < 4:
             writerr(
