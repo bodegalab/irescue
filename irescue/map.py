@@ -50,7 +50,7 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname="rmsk.bed"):
 
     Returns:
         str: Path to the repeatmasker bed file.
-    
+
     Raises:
         SystemExit: If neither regions nor genome is provided, or if the
                     regions file is not properly formatted.
@@ -260,12 +260,12 @@ def isec(
     # filter by minimum overlap between read and feature, if set
     ovfrac = f" -f {fracOverlap} " if fracOverlap else ""
     ovbp = f" $NF>={bpOverlap} " if bpOverlap else ""
-    
+
     # strand-specific intersection
     strandedness = strandedness.lower()
-    if strandedness == 'forward':
+    if strandedness == "forward":
         strand = " -s "
-    elif strandedness == 'reverse':
+    elif strandedness == "reverse":
         strand = " -S "
     else:
         strand = ""
