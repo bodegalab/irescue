@@ -146,7 +146,7 @@ def parseArguments():
         default="unstranded",
         help=(
             "Library strandedness. "
-            "Use only if the orientation of TEs is relevant."
+            "Use only if the orientation of TEs is relevant. "
             "One of: unstranded, forward, reverse (default: %(default)s)."
         ),
     )
