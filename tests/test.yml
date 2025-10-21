@@ -123,3 +123,19 @@
       md5sum: 3f0f7ca61f7af561c2b8723e010cba37
     - path: "irescue_out/tmp/mappings.tsv.gz"
       md5sum: f5aae354f59bef7a4bdb9cf3c5c8dafe
+
+- name: locus
+  tags:
+    - locus
+  command: irescue --keeptmp --dump-ec -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -g test --locus
+  files:
+    - path: "irescue_out/counts/barcodes.tsv.gz"
+      md5sum: 1a74fa12e65ac1703bbe61282854f151
+    - path: "irescue_out/counts/features.tsv.gz"
+      md5sum: 4894ae806fdafe9aad2c4989689fba31
+    - path: "irescue_out/counts/matrix.mtx.gz"
+      md5sum: 0b4c43f61ad89f330f17ccc1844ea437
+    - path: "irescue_out/ec_dump.tsv.gz"
+      md5sum: 29b3efa69a460a64af88bd37ea3794c4
+    - path: "irescue_out/tmp/mappings.tsv.gz"
+      md5sum: d7db121c92c04b36e3cc26ae0223426d
