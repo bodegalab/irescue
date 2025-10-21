@@ -100,9 +100,20 @@ def parseArguments():
         help="BAM tag containing the UMI sequence (default: %(default)s).",
     )
     parser.add_argument(
+        "-l",
+        "--locus",
+        action="store_true",
+        help=(
+            "Perform locus-level quantification, instead of subfamily-level"
+            " (default: %(default)s)."
+        ),
+    )
+    parser.add_argument(
         "--no-umi",
         action="store_true",
-        help="Ignore UMI sequence (for UMI-less datasets, such as Smart-seq).",
+        help="Ignore UMI sequence."
+            " Intended for UMI-less datasets, such as Smart-seq"
+            " (default: %(default)s).",
     )
     parser.add_argument(
         "-p",
@@ -295,6 +306,7 @@ def main():
         genome=args.genome,
         genomes=__genomes__,
         tmpdir=dirs["tmp"],
+        locus=args.locus,
         outname="rmsk.bed",
     )
 
@@ -341,6 +353,7 @@ def main():
         threads=args.threads,
         outdir=dirs["mex"],
         tmpdir=dirs["tmp"],
+        locus=args.locus,
         bedtools=args.bedtools,
         verbose=args.verbose,
     )
