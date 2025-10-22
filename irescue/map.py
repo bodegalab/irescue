@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+import gzip
 import io
 import os
-from gzip import open as gzopen
+from collections import defaultdict
 
 import requests
 from pysam import AlignmentFile, idxstats, index
@@ -10,8 +11,8 @@ from pysam import AlignmentFile, idxstats, index
 from irescue.misc import getlen, run_shell_cmd, testGz, unGzip, writerr
 
 
-# Check if bam file is indexed
 def checkIndex(bamFile, verbose):
+    """Check if BAM file is indexed. If not, attempt to index it."""
     with AlignmentFile(bamFile) as bam:
         if not bam.has_index():
             writerr("BAM index not found. Attempting to index the BAM...")
@@ -34,32 +35,48 @@ def checkIndex(bamFile, verbose):
                 )
 
 
-# Check repeatmasker regions bed file format. Download if not provided.
-# Returns the path of the repeatmasker bed file.
-def makeRmsk(regions, genome, genomes, tmpdir, outname):
+def makeRmsk(
+    regions, genome, genomes, outdir, locus=False, outname="rmsk.bed.gz"
+):
+    """Format and/or download RepeatMasker annotation.
+
+    Check repeatmasker regions bed file format. Download if not provided.
+    Returns the path of the repeatmasker bed file.
+
+    Args:
+        regions (str): Path to repeatmasker bed file.
+            Takes priority over genome.
+        genome (str): Genome assembly name.
+        genomes (dict): Dictionary of genome assembly names and URLs.
+        outdir (str): Path to output directory.
+        locus (bool): If True, prepare for locus-level quantification.
+        outname (str): Name of the output repeatmasker bed file.
+
+    Returns:
+        str: Path to the repeatmasker bed file.
+
+    Raises:
+        SystemExit: If neither regions nor genome is provided, or if the
+                    regions file is not properly formatted.
+    """
     # if a repeatmasker bed file is provided, use that
     if regions:
-        if testGz(regions):
-            f = gzopen(regions, "rb")
+        is_gz = testGz(regions)
+        f = gzip.open(regions, "rb") if is_gz else open(regions, "r")
 
-            def rl(x):
-                return x.readline().decode()
-        else:
-            f = open(regions, "r")
-
-            def rl(x):
-                return x.readline()
+        def rl(x, decode=False):
+            return x.readline().decode() if decode else x.readline()
 
         # skip header
-        line = rl(f)
+        line = rl(f, decode=is_gz)
         while line[0] == "#":
-            line = rl(f)
+            line = rl(f, decode=is_gz)
         # check for minimum column number
         if len(line.strip().split("\t")) < 4:
             writerr(
-                "Error: please provide a tab-separated BED file with at "
-                "least 4 columns and TE feature name (e.g. subfamily) "
-                "in 4th column.",
+                "Error: please provide a tab-separated BED file with at least"
+                " 4 columns and TE feature name (e.g. locus or subfamily)"
+                " in 4th column.",
                 error=True,
             )
         f.close()
@@ -80,14 +97,13 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
                 f"Couldn't connect to host.\n\n{e}",
                 error=True,
             )
-        rmsk = gzopen(io.BytesIO(response.content), "rb")
-        out = os.path.join(tmpdir, outname)
-        with open(out, "w") as f:
+        rmsk = gzip.open(io.BytesIO(response.content), "rb")
+        out = os.path.join(outdir, outname)
+        with gzip.GzipFile(out, "wb", mtime=0) as f:
             # print header
-            h = ["#chr", "start", "end", "name", "score", "strand"]
-            h = "\t".join(h)
-            h += "\n"
-            f.write(h)
+            h = ["#chr", "start", "end", "name", "locus_index", "strand"]
+            h = "\t".join(h) + "\n"
+            f.write(h.encode())
             # skip rmsk header
             for _ in range(header_lines):
                 next(rmsk)
@@ -100,22 +116,30 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
                 "srpRNA",
                 "tRNA",
             ]
+            subfamilies = defaultdict(int)
             for line in rmsk:
                 lst = line.decode("utf-8").strip().split()
-                strand, subfamily, famclass = lst[8:11]
+                strand, repname, famclass = lst[8:11]
                 if famclass.split("/")[0] in fams_to_skip:
                     continue
                 # concatenate family and class with subfamily
-                subfamily += "#" + famclass
-                score = lst[0]
+                repname += "#" + famclass
+                subfamilies[repname] += 1
+                locus_index = subfamilies[repname]
+                if locus:
+                    # make unique locus names
+                    repname += f"~{locus_index}"
                 chr, start, end = lst[4:7]
                 # make coordinates 0-based
                 start = str(int(start) - 1)
                 if strand != "+":
                     strand = "-"
-                outl = "\t".join([chr, start, end, subfamily, score, strand])
+                outl = "\t".join(
+                    [chr, start, end, repname, str(locus_index), strand]
+                )
                 outl += "\n"
-                f.write(outl)
+                f.write(outl.encode())
+        writerr(f"Wrote RepeatMasker annotation to {out}.")
     else:
         writerr(
             "Error: it is mandatory to define either --regions OR "
@@ -125,17 +149,21 @@ def makeRmsk(regions, genome, genomes, tmpdir, outname):
     return out
 
 
-# Uncompress the whitelist file if compressed.
-# Return the whitelist path, or False if not using a whitelist.
 def prepare_whitelist(whitelist, tmpdir):
+    """Uncompress the whitelist file if compressed.
+    Return the whitelist path, or False if not using a whitelist.
+    """
     if whitelist and testGz(whitelist):
         wlout = os.path.join(tmpdir, "whitelist.tsv")
         whitelist = unGzip(whitelist, wlout)
     return whitelist
 
 
-# Get list of reference names from BAM file, skipping those without reads.
 def getRefs(bamFile, bedFile):
+    """Get list of reference names from BAM file, skips those without reads
+    and checks their presence in the TE annotation bed file.
+    Returns the list of reference names to process.
+    """
     chrNames = list()
     for line in idxstats(bamFile).strip().split("\n"):
         fields = line.strip().split("\t")
@@ -143,7 +171,7 @@ def getRefs(bamFile, bedFile):
             chrNames.append(fields[0])
     bedChrNames = set()
     if testGz(bedFile):
-        with gzopen(bedFile, "rb") as f:
+        with gzip.open(bedFile, "rb") as f:
             for line in f:
                 bedChrNames.add(line.decode().split("\t")[0])
     else:
@@ -172,7 +200,6 @@ def getRefs(bamFile, bedFile):
         )
 
 
-# Intersect reads with repeatmasker regions. Return the intersection file path.
 def isec(
     bamFile,
     bedFile,
@@ -188,6 +215,11 @@ def isec(
     verbose,
     chrom,
 ):
+    """
+    Intersect alignments from bamFile with features from bedFile for a
+    specific chromosome (chrom). Return the path of the intersection file.
+    Intended for parallelization by chromosome.
+    """
     refdir = os.path.join(tmpdir, "refs")
     isecdir = os.path.join(tmpdir, "isec")
     os.makedirs(refdir, exist_ok=True)
@@ -234,12 +266,12 @@ def isec(
     # filter by minimum overlap between read and feature, if set
     ovfrac = f" -f {fracOverlap} " if fracOverlap else ""
     ovbp = f" $NF>={bpOverlap} " if bpOverlap else ""
-    
+
     # strand-specific intersection
     strandedness = strandedness.lower()
-    if strandedness == 'forward':
+    if strandedness == "forward":
         strand = " -s "
-    elif strandedness == 'reverse':
+    elif strandedness == "reverse":
         strand = " -S "
     else:
         strand = ""
@@ -263,8 +295,20 @@ def isec(
     return isecFile
 
 
-# Concatenate and sort data obtained from isec()
-def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
+def chrcat(
+    filesList,
+    threads,
+    outdir,
+    tmpdir,
+    locus=False,
+    bedtools="bedtools",
+    verbose=0,
+):
+    """
+    Concatenate and sort intersection files from isec() function.
+    Write mappings.tsv.gz, barcodes.tsv.gz and features.tsv.gz files.
+    Returns paths of the three output files.
+    """
     os.makedirs(outdir, exist_ok=True)
     mappings_file = os.path.join(tmpdir, "mappings.tsv.gz")
     barcodes_file = os.path.join(outdir, "barcodes.tsv.gz")
@@ -292,7 +336,9 @@ def chrcat(filesList, threads, outdir, tmpdir, bedtools, verbose):
     # write features.tsv.gz file
     cmd2 = f"zcat {mappings_file} "
     cmd2 += " | cut -f3 | sed 's/,/\\n/g' | gawk '!x[$1]++ { "
-    cmd2 += ' print $1"\\t"gensub(/#.+/,"",1,$1)"\\tGene Expression" }\' '
+    cmd2 += ' print $1"\\t"gensub(/#'
+    cmd2 += "[^~]" if locus else "."
+    cmd2 += '+/,"",1,$1)"\\tGene Expression" }\' '
     cmd2 += f" | LC_ALL=C sort -u | gzip > {features_file} "
 
     writerr("Concatenating mappings", level=1, send=verbose)
