@@ -27,6 +27,8 @@
       md5sum: d71ee82b25107d4e104d313efb4be134
     - path: "irescue_out/tmp/mappings.tsv.gz"
       md5sum: d404e6c3123f8cfde7689b5fb7763a89
+    - path: "irescue_out/rmsk.bed.gz"
+      md5sum: 169571f538624496a00f189771be2f5e
 
 - name: multi
   tags:
@@ -139,3 +141,5 @@
       md5sum: 29b3efa69a460a64af88bd37ea3794c4
     - path: "irescue_out/tmp/mappings.tsv.gz"
       md5sum: d7db121c92c04b36e3cc26ae0223426d
+    - path: "irescue_out/rmsk.bed.gz"
+      md5sum: 75ed0333b049a02672da8b1379cfa6bc

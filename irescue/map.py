@@ -36,7 +36,7 @@ def checkIndex(bamFile, verbose):
 
 
 def makeRmsk(
-    regions, genome, genomes, tmpdir, locus=False, outname="rmsk.bed"
+    regions, genome, genomes, outdir, locus=False, outname="rmsk.bed.gz"
 ):
     """Format and/or download RepeatMasker annotation.
 
@@ -48,7 +48,7 @@ def makeRmsk(
             Takes priority over genome.
         genome (str): Genome assembly name.
         genomes (dict): Dictionary of genome assembly names and URLs.
-        tmpdir (str): Path to temporary directory.
+        outdir (str): Path to output directory.
         locus (bool): If True, prepare for locus-level quantification.
         outname (str): Name of the output repeatmasker bed file.
 
@@ -98,13 +98,12 @@ def makeRmsk(
                 error=True,
             )
         rmsk = gzip.open(io.BytesIO(response.content), "rb")
-        out = os.path.join(tmpdir, outname)
-        with open(out, "w") as f:
+        out = os.path.join(outdir, outname)
+        with gzip.GzipFile(out, "wb", mtime=0) as f:
             # print header
-            h = ["#chr", "start", "end", "name", "score", "strand"]
-            h = "\t".join(h)
-            h += "\n"
-            f.write(h)
+            h = ["#chr", "start", "end", "name", "locus_index", "strand"]
+            h = "\t".join(h) + "\n"
+            f.write(h.encode())
             # skip rmsk header
             for _ in range(header_lines):
                 next(rmsk)
@@ -125,19 +124,22 @@ def makeRmsk(
                     continue
                 # concatenate family and class with subfamily
                 repname += "#" + famclass
+                subfamilies[repname] += 1
+                locus_index = subfamilies[repname]
                 if locus:
                     # make unique locus names
-                    subfamilies[repname] += 1
-                    repname += f"~{subfamilies[repname]}"
-                score = lst[0]
+                    repname += f"~{locus_index}"
                 chr, start, end = lst[4:7]
                 # make coordinates 0-based
                 start = str(int(start) - 1)
                 if strand != "+":
                     strand = "-"
-                outl = "\t".join([chr, start, end, repname, score, strand])
+                outl = "\t".join(
+                    [chr, start, end, repname, str(locus_index), strand]
+                )
                 outl += "\n"
-                f.write(outl)
+                f.write(outl.encode())
+        writerr(f"Wrote RepeatMasker annotation to {out}.")
     else:
         writerr(
             "Error: it is mandatory to define either --regions OR "
@@ -335,7 +337,7 @@ def chrcat(
     cmd2 = f"zcat {mappings_file} "
     cmd2 += " | cut -f3 | sed 's/,/\\n/g' | gawk '!x[$1]++ { "
     cmd2 += ' print $1"\\t"gensub(/#'
-    cmd2 += '[^~]' if locus else '.'
+    cmd2 += "[^~]" if locus else "."
     cmd2 += '+/,"",1,$1)"\\tGene Expression" }\' '
     cmd2 += f" | LC_ALL=C sort -u | gzip > {features_file} "
 

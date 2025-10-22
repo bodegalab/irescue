@@ -305,9 +305,9 @@ def main():
         regions=args.regions,
         genome=args.genome,
         genomes=__genomes__,
-        tmpdir=dirs["tmp"],
+        outdir=dirs["out"],
         locus=args.locus,
-        outname="rmsk.bed",
+        outname="rmsk.bed.gz",
     )
 
     # get list of reference names from bam
