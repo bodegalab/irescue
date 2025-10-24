@@ -168,7 +168,7 @@ def check_tags(
         c = 1
         writerr(
             f"Testing bam file for {CBtag} {'and ' + UMItag if UMItag else ''}"
-            "tags presence. Will stop at the first occurrence.",
+            " tags presence. Will stop at the first occurrence.",
             level=1,
             send=verbose,
         )
