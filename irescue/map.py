@@ -193,7 +193,10 @@ def makeRmsk(
                     outl += "\n"
                     f.write(outl.encode())
 
-        writerr(f"Wrote RepeatMasker {"subfamily" if locus == "disabled" else locus}-level annotation to {out if locus != "instance" else out_instance}.")
+        level = "subfamily" if locus == "disabled" else locus
+        outfile = out if locus != "instance" else out_instance
+        writerr(f"Wrote RepeatMasker {level}-level annotation to {outfile}.")
+
     else:
         writerr(
             "Error: it is mandatory to define either --regions OR "
