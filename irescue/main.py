@@ -100,12 +100,15 @@ def parseArguments():
         help="BAM tag containing the UMI sequence (default: %(default)s).",
     )
     parser.add_argument(
-        "-l",
-        "--locus",
-        action="store_true",
+        "--locus-level",
+        type=str,
+        metavar="STR",
+        choices=["disabled", "fragment", "instance"],
+        default="disabled", 
         help=(
-            "Perform locus-level quantification, instead of subfamily-level"
-            " (default: %(default)s)."
+            "Perform locus-level quantification. "
+            "One of: disabled, fragment, instance (default: %(default)s). "
+            "disabled means subfamily-level quantification."
         ),
     )
     parser.add_argument(
@@ -306,7 +309,7 @@ def main():
         genome=args.genome,
         genomes=__genomes__,
         outdir=dirs["out"],
-        locus=args.locus,
+        locus=args.locus_level,
         outname="rmsk.bed.gz",
     )
 
@@ -353,7 +356,7 @@ def main():
         threads=args.threads,
         outdir=dirs["mex"],
         tmpdir=dirs["tmp"],
-        locus=args.locus,
+        locus=args.locus_level,
         bedtools=args.bedtools,
         verbose=args.verbose,
     )
