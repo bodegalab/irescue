@@ -129,7 +129,7 @@
 - name: locus
   tags:
     - locus
-  command: irescue --keeptmp --dump-ec -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -g test --locus
+  command: irescue --keeptmp --dump-ec -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -g test --locus-level fragment
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 1a74fa12e65ac1703bbe61282854f151
