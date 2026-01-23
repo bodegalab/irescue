@@ -108,7 +108,7 @@ def parseArguments():
         help=(
             "Perform locus-level quantification. "
             "One of: disabled, fragment, instance (default: %(default)s). "
-            "disabled means subfamily-level quantification."
+            "Disabled means subfamily-level quantification."
         ),
     )
     parser.add_argument(
