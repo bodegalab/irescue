@@ -59,7 +59,7 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
     """
 
     if regions:
-    # if a repeatmasker bed file is provided, use that
+        # if a repeatmasker bed file is provided, use that
         is_gz = testGz(regions)
         f = gzip.open(regions, "rb") if is_gz else open(regions, "r")
 
@@ -84,8 +84,8 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
         return regions
 
     elif genome:
-    # if no repeatmasker file is provided, and a genome assembly name is
-    # provided, download and prepare a rmsk.bed file
+        # if no repeatmasker file is provided, and a genome assembly name is
+        # provided, download and prepare a rmsk.bed file
         url, header_lines = genomes[genome]
         writerr(
             "Downloading and parsing RepeatMasker annotation for "
@@ -158,8 +158,8 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
                 outl += "\n"
                 rmsk_out.write(outl.encode())
         if locus == "instance":
-        # if locus-level quantification by instance is requested,
-        # prepare a separate file with instance-level annotation
+            # if locus-level quantification by instance is requested,
+            # prepare a separate file with instance-level annotation
             outname_instance = "rmsk_instance.bed.gz"
             out_instance = os.path.join(outdir, outname_instance)
             with (
