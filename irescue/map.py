@@ -136,7 +136,7 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
                     locus_index = subfamilies[name]
                     name += f"~{locus_index}"
                     if locus == "instance":
-                        if instance in rmsk_dict.keys():
+                        if instance in rmsk_dict:
                             rmsk_dict[instance]["repSubfam"].add(subfamily)
                             rmsk_dict[instance]["repFam"].add(family)
                             rmsk_dict[instance]["repClass"].add(clas)
