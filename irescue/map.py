@@ -173,7 +173,9 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
                         line.decode("utf-8").strip().split("\t")
                     )
                     repSubfam = "|".join(sorted(rmsk_dict[instance]["repSubfam"]))
-                    repFam = "|".join(sorted(rmsk_dict[instance]["repFam"]))
+                    repFam = "|".join(
+                        sorted(f for f in rmsk_dict[instance]["repFam"] if f)
+                    )
                     repFam = (
                         "" if not repFam else "/" + repFam
                     )  # to take into account cases in which repFamily is not annotated
