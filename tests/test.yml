@@ -28,7 +28,7 @@
     - path: "irescue_out/tmp/mappings.tsv.gz"
       md5sum: d404e6c3123f8cfde7689b5fb7763a89
     - path: "irescue_out/rmsk.bed.gz"
-      md5sum: 169571f538624496a00f189771be2f5e
+      md5sum: 663134e9bb5519d136201d2bd5d35d63
 
 - name: multi
   tags:
@@ -126,10 +126,10 @@
     - path: "irescue_out/tmp/mappings.tsv.gz"
       md5sum: f5aae354f59bef7a4bdb9cf3c5c8dafe
 
-- name: locus
+- name: fragment
   tags:
     - locus
-  command: irescue --keeptmp --dump-ec -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -g test --locus
+  command: irescue --keeptmp --dump-ec -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -g test --locus-level fragment
   files:
     - path: "irescue_out/counts/barcodes.tsv.gz"
       md5sum: 1a74fa12e65ac1703bbe61282854f151
@@ -142,4 +142,24 @@
     - path: "irescue_out/tmp/mappings.tsv.gz"
       md5sum: d7db121c92c04b36e3cc26ae0223426d
     - path: "irescue_out/rmsk.bed.gz"
-      md5sum: 75ed0333b049a02672da8b1379cfa6bc
+      md5sum: 050b0a484a04e5d466afd54c794e35fd
+
+- name: instance
+  tags:
+    - locus
+  command: irescue --keeptmp --dump-ec -vv -b ./tests/data/Aligned.sortedByCoord.out.bam -g test --locus-level instance
+  files:
+    - path: "irescue_out/counts/barcodes.tsv.gz"
+      md5sum: 1a74fa12e65ac1703bbe61282854f151
+    - path: "irescue_out/counts/features.tsv.gz"
+      md5sum: 045273e35f85522ec70a7be127fd5d7f
+    - path: "irescue_out/counts/matrix.mtx.gz"
+      md5sum: a63c59d45b79bd4bfae1d7ffb26b6c6e
+    - path: "irescue_out/ec_dump.tsv.gz"
+      md5sum: dc7a39ce64959f0b83dd53c158041746
+    - path: "irescue_out/tmp/mappings.tsv.gz"
+      md5sum: e0986db4bea3929a8f14eb61f2596a41
+    - path: "irescue_out/rmsk.bed.gz"
+      md5sum: 050b0a484a04e5d466afd54c794e35fd
+    - path: "irescue_out/rmsk_instance.bed.gz"
+      md5sum: 7ba1ba91b19292a6d49a34e818470630

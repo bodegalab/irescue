@@ -35,9 +35,7 @@ def checkIndex(bamFile, verbose):
                 )
 
 
-def makeRmsk(
-    regions, genome, genomes, outdir, locus=False, outname="rmsk.bed.gz"
-):
+def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.bed.gz"):
     """Format and/or download RepeatMasker annotation.
 
     Check repeatmasker regions bed file format. Download if not provided.
@@ -45,11 +43,11 @@ def makeRmsk(
 
     Args:
         regions (str): Path to repeatmasker bed file.
-            Takes priority over genome.
+            Ignores "genome", "genomes" and "locus" parameters.
         genome (str): Genome assembly name.
         genomes (dict): Dictionary of genome assembly names and URLs.
         outdir (str): Path to output directory.
-        locus (bool): If True, prepare for locus-level quantification.
+        locus (str): If not disabled, prepare for locus-level quantification.
         outname (str): Name of the output repeatmasker bed file.
 
     Returns:
@@ -59,8 +57,9 @@ def makeRmsk(
         SystemExit: If neither regions nor genome is provided, or if the
                     regions file is not properly formatted.
     """
-    # if a repeatmasker bed file is provided, use that
+
     if regions:
+        # if a repeatmasker bed file is provided, use that
         is_gz = testGz(regions)
         f = gzip.open(regions, "rb") if is_gz else open(regions, "r")
 
@@ -75,15 +74,18 @@ def makeRmsk(
         if len(line.strip().split("\t")) < 4:
             writerr(
                 "Error: please provide a tab-separated BED file with at least"
-                " 4 columns and TE feature name (e.g. locus or subfamily)"
-                " in 4th column.",
+                " 4 columns with the 4th column being the TE feature name, "
+                "such as the TE subfamily or locus "
+                "(as in fragment or instance ID).",
                 error=True,
             )
         f.close()
-        out = regions
-    # if no repeatmasker file is provided, and a genome assembly name is
-    # provided, download and prepare a rmsk.bed file
+        writerr(f"Using provided RepeatMasker annotation from {regions}.")
+        return regions
+
     elif genome:
+        # if no repeatmasker file is provided, and a genome assembly name is
+        # provided, download and prepare a rmsk.bed file
         url, header_lines = genomes[genome]
         writerr(
             "Downloading and parsing RepeatMasker annotation for "
@@ -97,18 +99,20 @@ def makeRmsk(
                 f"Couldn't connect to host.\n\n{e}",
                 error=True,
             )
-        rmsk = gzip.open(io.BytesIO(response.content), "rb")
         out = os.path.join(outdir, outname)
-        with gzip.GzipFile(out, "wb", mtime=0) as f:
+        with (
+            gzip.open(io.BytesIO(response.content), "rb") as rmsk_in,
+            gzip.GzipFile(out, "wb", mtime=0) as rmsk_out,
+        ):
             # print header
-            h = ["#chr", "start", "end", "name", "locus_index", "strand"]
+            h = ["#chr", "start", "end", "name", "repInstance", "strand"]
             h = "\t".join(h) + "\n"
-            f.write(h.encode())
+            rmsk_out.write(h.encode())
             # skip rmsk header
             for _ in range(header_lines):
-                next(rmsk)
+                next(rmsk_in)
             # parse rmsk
-            fams_to_skip = [
+            repeats_to_skip = [
                 "Low_complexity",
                 "Simple_repeat",
                 "rRNA",
@@ -117,36 +121,82 @@ def makeRmsk(
                 "tRNA",
             ]
             subfamilies = defaultdict(int)
-            for line in rmsk:
-                lst = line.decode("utf-8").strip().split()
-                strand, repname, famclass = lst[8:11]
-                if famclass.split("/")[0] in fams_to_skip:
+            rmsk_dict = dict()
+            for line in rmsk_in:
+                fields = line.decode("utf-8").strip().split()
+                chr, start, end = fields[4:7]
+                strand, subfamily, clasfam = fields[8:11]
+                instance = fields[14]
+                clas, family = clasfam.split("/") if "/" in clasfam else (clasfam, "")
+                # skip problematic repeats
+                if clas in repeats_to_skip:
                     continue
                 # concatenate family and class with subfamily
-                repname += "#" + famclass
-                subfamilies[repname] += 1
-                locus_index = subfamilies[repname]
-                if locus:
-                    # make unique locus names
-                    repname += f"~{locus_index}"
-                chr, start, end = lst[4:7]
-                # make coordinates 0-based
-                start = str(int(start) - 1)
+                name = f"{subfamily}#{clasfam}"
+
+                # repeat names for locus-level quantifications
+                if locus != "disabled":
+                    subfamilies[name] += 1
+                    locus_index = subfamilies[name]
+                    name += f"~{locus_index}"
+                    if locus == "instance":
+                        if instance in rmsk_dict:
+                            rmsk_dict[instance]["repSubfam"].add(subfamily)
+                            rmsk_dict[instance]["repFam"].add(family)
+                            rmsk_dict[instance]["repClass"].add(clas)
+                        else:
+                            rmsk_dict[instance] = {
+                                "repSubfam": {subfamily},
+                                "repFam": {family},
+                                "repClass": {clas},
+                            }
+
+                start = str(int(start) - 1)  # make coordinates 0-based
                 if strand != "+":
                     strand = "-"
-                outl = "\t".join(
-                    [chr, start, end, repname, str(locus_index), strand]
-                )
+                outl = "\t".join([chr, start, end, name, instance, strand])
                 outl += "\n"
-                f.write(outl.encode())
-        writerr(f"Wrote RepeatMasker annotation to {out}.")
+                rmsk_out.write(outl.encode())
+        if locus == "instance":
+            # if locus-level quantification by instance is requested,
+            # prepare a separate file with instance-level annotation
+            outname_instance = "rmsk_instance.bed.gz"
+            out_instance = os.path.join(outdir, outname_instance)
+            with (
+                gzip.open(out, "rb") as rmsk_in,
+                gzip.GzipFile(out_instance, "wb", mtime=0) as rmsk_out,
+            ):
+                next(rmsk_in)  # skip header row
+                # print header
+                h = ["#chr", "start", "end", "name", "repInstance", "strand"]
+                h = "\t".join(h) + "\n"
+                rmsk_out.write(h.encode())
+                for line in rmsk_in:
+                    chr, start, end, name, instance, strand = (
+                        line.decode("utf-8").strip().split("\t")
+                    )
+                    repSubfam = "|".join(sorted(rmsk_dict[instance]["repSubfam"]))
+                    repFam = "|".join(
+                        sorted(f for f in rmsk_dict[instance]["repFam"] if f)
+                    )
+                    repFam = (
+                        "" if not repFam else "/" + repFam
+                    )  # to take into account cases in which repFamily is not annotated
+                    repClass = "|".join(sorted(rmsk_dict[instance]["repClass"]))
+                    repname = f"{repSubfam}#{repClass}{repFam}~{instance}"
+                    outl = "\t".join([chr, start, end, repname, instance, strand])
+                    outl += "\n"
+                    rmsk_out.write(outl.encode())
+        level = "subfamily" if locus == "disabled" else locus
+        outfile = out if locus != "instance" else out_instance
+        writerr(f"Wrote RepeatMasker {level}-level annotation to {outfile}.")
+        return outfile
+
     else:
         writerr(
-            "Error: it is mandatory to define either --regions OR "
-            "--genome parameter.",
+            "Error: it is mandatory to define either --regions OR --genome parameter.",
             error=True,
         )
-    return out
 
 
 def prepare_whitelist(whitelist, tmpdir):
@@ -242,15 +292,11 @@ def isec(
     else:
         stream = f" <({samtools} view -h {bamFile} {chrom} | "
     stream += ' gawk \'!($1~/^@/) { split("", tags); '
-    stream += (
-        ' for (i=12;i<=NF;i++) {split($i,tag,":"); tags[tag[1]]=tag[3]}; '
-    )
+    stream += ' for (i=12;i<=NF;i++) {split($i,tag,":"); tags[tag[1]]=tag[3]}; '
     # Discard records without CB tag, unvalid STARSolo CBs, missing UMI tag,
     # UMIs with Ns and homopolymer UMIs
     if UMItag:
-        stream += (
-            f' if(tags["{CBtag}"]~/^(|-)$/ || tags["{UMItag}"]~/.*N.*/ || '
-        )
+        stream += f' if(tags["{CBtag}"]~/^(|-)$/ || tags["{UMItag}"]~/.*N.*/ || '
         stream += f' tags["{UMItag}"]~/^$|^(A+|G+|T+|C+)$/) {{next}}; '
         # Append CB and UMI to read name
         stream += f' $1=$1"/"tags["{CBtag}"]"/"tags["{UMItag}"]; '
@@ -300,7 +346,7 @@ def chrcat(
     threads,
     outdir,
     tmpdir,
-    locus=False,
+    locus="disabled",
     bedtools="bedtools",
     verbose=0,
 ):
@@ -337,7 +383,7 @@ def chrcat(
     cmd2 = f"zcat {mappings_file} "
     cmd2 += " | cut -f3 | sed 's/,/\\n/g' | gawk '!x[$1]++ { "
     cmd2 += ' print $1"\\t"gensub(/#'
-    cmd2 += "[^~]" if locus else "."
+    cmd2 += "[^~]" if locus != "disabled" else "."
     cmd2 += '+/,"",1,$1)"\\tGene Expression" }\' '
     cmd2 += f" | LC_ALL=C sort -u | gzip > {features_file} "
 
