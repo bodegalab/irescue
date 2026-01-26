@@ -43,7 +43,7 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
 
     Args:
         regions (str): Path to repeatmasker bed file.
-            Takes priority over genome.
+            Ignores "genome", "genomes" and "locus" parameters.
         genome (str): Genome assembly name.
         genomes (dict): Dictionary of genome assembly names and URLs.
         outdir (str): Path to output directory.
@@ -57,8 +57,9 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
         SystemExit: If neither regions nor genome is provided, or if the
                     regions file is not properly formatted.
     """
-    # if a repeatmasker bed file is provided, use that
+
     if regions:
+    # if a repeatmasker bed file is provided, use that
         is_gz = testGz(regions)
         f = gzip.open(regions, "rb") if is_gz else open(regions, "r")
 
@@ -73,15 +74,18 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
         if len(line.strip().split("\t")) < 4:
             writerr(
                 "Error: please provide a tab-separated BED file with at least"
-                " 4 columns and TE feature name (e.g. locus or subfamily)"
-                " in 4th column.",
+                " 4 columns with the 4th column being the TE feature name, "
+                "such as the TE subfamily or locus "
+                "(as in fragment or instance ID).",
                 error=True,
             )
         f.close()
-        out = regions
+        writerr(f"Using provided RepeatMasker annotation from {regions}.")
+        return regions
+
+    elif genome:
     # if no repeatmasker file is provided, and a genome assembly name is
     # provided, download and prepare a rmsk.bed file
-    elif genome:
         url, header_lines = genomes[genome]
         writerr(
             "Downloading and parsing RepeatMasker annotation for "
@@ -153,12 +157,11 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
                 outl = "\t".join([chr, start, end, name, instance, strand])
                 outl += "\n"
                 rmsk_out.write(outl.encode())
-
+        if locus == "instance":
         # if locus-level quantification by instance is requested,
         # prepare a separate file with instance-level annotation
-        if locus == "instance":
-            outname = "rmsk_instance.bed.gz"
-            out_instance = os.path.join(outdir, outname)
+            outname_instance = "rmsk_instance.bed.gz"
+            out_instance = os.path.join(outdir, outname_instance)
             with (
                 gzip.open(out, "rb") as rmsk_in,
                 gzip.GzipFile(out_instance, "wb", mtime=0) as rmsk_out,
@@ -180,26 +183,20 @@ def makeRmsk(regions, genome, genomes, outdir, locus="disabled", outname="rmsk.b
                         "" if not repFam else "/" + repFam
                     )  # to take into account cases in which repFamily is not annotated
                     repClass = "|".join(sorted(rmsk_dict[instance]["repClass"]))
-
                     repname = f"{repSubfam}#{repClass}{repFam}~{instance}"
                     outl = "\t".join([chr, start, end, repname, instance, strand])
                     outl += "\n"
                     rmsk_out.write(outl.encode())
-
         level = "subfamily" if locus == "disabled" else locus
         outfile = out if locus != "instance" else out_instance
         writerr(f"Wrote RepeatMasker {level}-level annotation to {outfile}.")
+        return outfile
 
     else:
         writerr(
             "Error: it is mandatory to define either --regions OR --genome parameter.",
             error=True,
         )
-
-    if locus == "instance":
-        return out_instance
-    else:
-        return out
 
 
 def prepare_whitelist(whitelist, tmpdir):
