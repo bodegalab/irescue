@@ -104,7 +104,7 @@ def parseArguments():
         type=str,
         metavar="STR",
         choices=["disabled", "fragment", "instance"],
-        default="disabled", 
+        default="disabled",
         help=(
             "Perform locus-level quantification. "
             "One of: disabled, fragment, instance (default: %(default)s). "
