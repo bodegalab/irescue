@@ -182,6 +182,25 @@ def parseArguments():
         ),
     )
     parser.add_argument(
+        "--exclude-unreliable-features",
+        action="store_true",
+        help=(
+            "Exclude features supported by only 1 multimapping read "
+            "(Default: %(default)s)."
+        ),
+    )
+    parser.add_argument(
+        "--convergence-criterion",
+        type=str,
+        metavar="STR",
+        choices=["likelihood", "parameters"],
+        default="likelihood",
+        help=(
+            "Criterion to define convergence. "
+            "One of: likelihood, parameters (Default: %(default)s)."
+        ),
+    )
+    parser.add_argument(
         "--dump-ec",
         action="store_true",
         help="Write a description log file of Equivalence Classes.",
@@ -379,6 +398,8 @@ def main():
         feature_index,
         dirs["tmp"],
         args.no_umi,
+        args.exclude_unreliable_features,
+        args.convergence_criterion,
         args.dump_ec,
         args.max_iters,
         args.tolerance,

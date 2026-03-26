@@ -29,7 +29,7 @@ def log_likelihood(matrix, counts):
     return log_likelihood
 
 
-def run_em(matrix, cycles=100, tolerance=1e-4):
+def run_em(matrix, cycles=100, tolerance=1e-4, convergence_criterion="likelihood"):
     """
     Run Expectation-Maximization (EM) algorithm to redistribute read counts
     across a set of features.
@@ -42,6 +42,8 @@ def run_em(matrix, cycles=100, tolerance=1e-4):
         Number of EM cycles.
     tolerance : float
         Tolerance threshold of log-likelihood difference to infer convergence.
+    convergence_criterion : str
+        Criterion to determine convergence: "likelihood" or "parameters".
 
     Returns
     -------
@@ -59,8 +61,8 @@ def run_em(matrix, cycles=100, tolerance=1e-4):
     nFeatures = matrix.shape[1]
     counts = np.full(shape=nFeatures, fill_value=1 / nFeatures)
 
-    # Initial log-likelihood
-    prev_loglik = log_likelihood(matrix, counts)
+    # Initial log-likelihood (or initial counts)
+    prev = log_likelihood(matrix, counts) if convergence_criterion=="likelihood" else counts
 
     converged = False
     curr_cycle = 0
@@ -71,15 +73,15 @@ def run_em(matrix, cycles=100, tolerance=1e-4):
         e_matrix = e_step(matrix=matrix, counts=counts)
         counts = m_step(matrix=e_matrix)
 
-        # Compute the new log-likelihood
-        loglik = log_likelihood(matrix, counts)
+        # Compute the new log-likelihood (depending on convergence criterion)
+        curr = log_likelihood(matrix, counts) if convergence_criterion=="likelihood" else counts
 
         # Check for convergence
-        loglikdiff = loglik - prev_loglik
-        if np.abs(loglikdiff) < tolerance:
+        diff = np.abs(curr-prev) if convergence_criterion=="likelihood" else np.abs(curr-prev).sum()
+        if diff < tolerance:
             converged = True
             break
 
-        prev_loglik = loglik
+        prev = curr
 
-    return counts, (curr_cycle, converged, loglik, loglikdiff)
+    return counts, (curr_cycle, converged, curr, diff)

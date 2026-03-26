@@ -94,7 +94,7 @@ def parse_maps(maps_file, feature_index):
 
 
 def compute_cell_counts(
-    equivalence_classes, features_index, max_iters, tolerance, dumpEC, no_umi
+    equivalence_classes, features_index, max_iters, tolerance, dumpEC, no_umi, exclude_unreliable_features, convergence_criterion
 ):
     """
     Calculate TE counts of a single cell, given a list of equivalence classes.
@@ -259,18 +259,35 @@ def compute_cell_counts(
         em_array = em_array.tocsr()
 
         # save an array with features > 0, as in em_array order
-        tokeep = np.flatnonzero(em_array.sum(axis=0))
+        if not exclude_unreliable_features:
+            tokeep = np.flatnonzero(em_array.sum(axis=0))
+        else:
+            # keep features supported by at least 2 multimapping
+            tokeep1 = np.where((em_array.sum(axis=0) >= 2).A1)[0]
+            # rescue features supported by only 1 multimapping but also by (at least) 1 uniquely mapping
+            tokeep2 = np.intersect1d(
+                np.array(list(counts.keys())),
+                np.where((em_array.sum(axis=0) == 1).A1)[0]
+            )
+            tokeep = np.union1d(tokeep1, tokeep2)
+
         # remove unmapped features from em_array
         em_array = em_array[:, tokeep]
-        # run EM
-        em_counts, em_stats = run_em(
-            em_array, cycles=max_iters, tolerance=tolerance
-        )
-        em_counts = em_counts * em_array.shape[0]
 
-        for i, c in zip(tokeep + 1, em_counts):
-            if c > 0:
-                counts[i] += c
+        # removing some features may yield empty rows (not necessary if exclude_unreliable_features is disabled)
+        if exclude_unreliable_features:
+            em_array = em_array[(em_array.sum(axis=1)>0).A1, :]
+
+        if em_array.shape[1] > 0:
+            # run EM
+            em_counts, em_stats = run_em(
+                em_array, cycles=max_iters, tolerance=tolerance, convergence_criterion=convergence_criterion
+            )
+            em_counts = em_counts * em_array.shape[0]
+
+            for i, c in zip(tokeep + 1, em_counts):
+                if c > 0:
+                    counts[i] += c
     return dict(counts), dump, em_stats
 
 
@@ -292,6 +309,8 @@ def run_count(
     features_index,
     tmpdir,
     no_umi,
+    exclude_unreliable_features,
+    convergence_criterion,
     dumpEC,
     max_iters,
     tolerance,
@@ -323,11 +342,13 @@ def run_count(
                 tolerance=tolerance,
                 dumpEC=dumpEC,
                 no_umi=no_umi,
+                exclude_unreliable_features=exclude_unreliable_features,
+                convergence_criterion=convergence_criterion
             )
             writerr(
                 f"[{taskn}] Write cell {cellidx} ({cellbarcode.decode()}). "
                 f"EM cycles: {em_stats[0]}. Converged: {em_stats[1]}. "
-                f"Log likelihood: {em_stats[2]}. Increment: {em_stats[3]}.",
+                f"Log likelihood: {em_stats[2] if convergence_criterion=='likelihood' else 'Not computed because of convergence criterion choice'}. Increment: {em_stats[3]}.",
                 level=1,
                 send=verbose,
             )
