@@ -67,7 +67,7 @@ def run_em(matrix, cycles=100, tolerance=1e-4, convergence_criterion="likelihood
     if convergence_criterion=="likelihood":
         prev = log_likelihood(matrix, counts)
     else:
-        prev = counts
+        prev = counts.copy()
 
     converged = False
     curr_cycle = 0
@@ -82,7 +82,7 @@ def run_em(matrix, cycles=100, tolerance=1e-4, convergence_criterion="likelihood
         if convergence_criterion=="likelihood":
             curr = log_likelihood(matrix, counts)
         else:
-            curr = counts
+            curr = counts.copy()
 
         # Check for convergence
         if convergence_criterion=="likelihood":
@@ -93,6 +93,6 @@ def run_em(matrix, cycles=100, tolerance=1e-4, convergence_criterion="likelihood
             converged = True
             break
 
-        prev = curr
+        prev = curr.copy()
 
     return counts, (curr_cycle, converged, curr, diff)
