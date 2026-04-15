@@ -262,11 +262,13 @@ def compute_cell_counts(
         if not exclude_unreliable_features:
             tokeep = np.flatnonzero(em_array.sum(axis=0))
         else:
-            # keep features supported by at least 2 multimapping
+            # only keep features supported by >=2 multimapping reads,
+            # or >=1 multimapping and >=1 uniquely mapping
             tokeep1 = np.where((em_array.sum(axis=0) >= 2).A1)[0]
-            # rescue features supported by only 1 multimapping but also by (at least) 1 uniquely mapping
             tokeep2 = np.intersect1d(
-                np.array(list(counts.keys())),
+                # (-1 because of 0-based indexing of em_array
+                #  against 1-based indexing of features)
+                np.array(list(counts.keys())) - 1,
                 np.where((em_array.sum(axis=0) == 1).A1)[0]
             )
             tokeep = np.union1d(tokeep1, tokeep2)
@@ -274,7 +276,8 @@ def compute_cell_counts(
         # remove unmapped features from em_array
         em_array = em_array[:, tokeep]
 
-        # removing some features may yield empty rows (not necessary if exclude_unreliable_features is disabled)
+        # removing some features may yield empty rows
+        # (not necessary if exclude_low_support is disabled)
         if exclude_unreliable_features:
             em_array = em_array[(em_array.sum(axis=1)>0).A1, :]
 
@@ -285,6 +288,10 @@ def compute_cell_counts(
             )
             em_counts = em_counts * em_array.shape[0]
 
+            # add EM-optimized counts to uniquely mapped counts
+            # (add +1 to features to multimapped features to keep
+            #  because of 0-based indexing of em_array against
+            #  1-based indexing of features)
             for i, c in zip(tokeep + 1, em_counts):
                 if c > 0:
                     counts[i] += c
