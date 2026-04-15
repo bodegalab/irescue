@@ -94,7 +94,7 @@ def parse_maps(maps_file, feature_index):
 
 
 def compute_cell_counts(
-    equivalence_classes, features_index, max_iters, tolerance, dumpEC, no_umi, exclude_unreliable_features, convergence_criterion
+    equivalence_classes, features_index, max_iters, tolerance, dumpEC, no_umi, exclude_low_support, convergence_criterion
 ):
     """
     Calculate TE counts of a single cell, given a list of equivalence classes.
@@ -259,7 +259,7 @@ def compute_cell_counts(
         em_array = em_array.tocsr()
 
         # save an array with features > 0, as in em_array order
-        if not exclude_unreliable_features:
+        if not exclude_low_support:
             tokeep = np.flatnonzero(em_array.sum(axis=0))
         else:
             # only keep features supported by >=2 multimapping reads,
@@ -278,7 +278,7 @@ def compute_cell_counts(
 
         # removing some features may yield empty rows
         # (not necessary if exclude_low_support is disabled)
-        if exclude_unreliable_features:
+        if exclude_low_support:
             em_array = em_array[(em_array.sum(axis=1)>0).A1, :]
 
         if em_array.shape[1] > 0:
@@ -316,7 +316,7 @@ def run_count(
     features_index,
     tmpdir,
     no_umi,
-    exclude_unreliable_features,
+    exclude_low_support,
     convergence_criterion,
     dumpEC,
     max_iters,
@@ -349,7 +349,7 @@ def run_count(
                 tolerance=tolerance,
                 dumpEC=dumpEC,
                 no_umi=no_umi,
-                exclude_unreliable_features=exclude_unreliable_features,
+                exclude_low_support=exclude_low_support,
                 convergence_criterion=convergence_criterion
             )
             writerr(

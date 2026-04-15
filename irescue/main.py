@@ -177,15 +177,8 @@ def parseArguments():
         metavar="FLOAT",
         default=1e-4,
         help=(
-            "Log-likelihood change below which convergence is assumed "
-            "(Default: %(default)s)."
-        ),
-    )
-    parser.add_argument(
-        "--exclude-unreliable-features",
-        action="store_true",
-        help=(
-            "Exclude features supported by only 1 multimapping read "
+            "Change between EM iterations below which convergence is assumed, "
+            "calculated on --convergence-criterion."
             "(Default: %(default)s)."
         ),
     )
@@ -197,7 +190,15 @@ def parseArguments():
         default="likelihood",
         help=(
             "Criterion to define convergence. "
-            "One of: likelihood, parameters (Default: %(default)s)."
+            "One of: %(choices)s. (Default: %(default)s)."
+        ),
+    )
+    parser.add_argument(
+        "--exclude-low-support",
+        action="store_true",
+        help=(
+            "Exclude features supported by only 1 multimapping read. "
+            "This should improve performance without significantly affecting results."
         ),
     )
     parser.add_argument(
@@ -398,7 +399,7 @@ def main():
         feature_index,
         dirs["tmp"],
         args.no_umi,
-        args.exclude_unreliable_features,
+        args.exclude_low_support,
         args.convergence_criterion,
         args.dump_ec,
         args.max_iters,
