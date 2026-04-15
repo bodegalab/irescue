@@ -43,7 +43,9 @@ def run_em(matrix, cycles=100, tolerance=1e-4, convergence_criterion="likelihood
     tolerance : float
         Tolerance threshold of log-likelihood difference to infer convergence.
     convergence_criterion : str
-        Criterion to determine convergence: "likelihood" or "parameters".
+        Criterion to determine convergence:
+            "likelihood": log-likelihood change < tolerance.
+            "estimates": feature abundances change < tolerance.
 
     Returns
     -------
@@ -62,7 +64,10 @@ def run_em(matrix, cycles=100, tolerance=1e-4, convergence_criterion="likelihood
     counts = np.full(shape=nFeatures, fill_value=1 / nFeatures)
 
     # Initial log-likelihood (or initial counts)
-    prev = log_likelihood(matrix, counts) if convergence_criterion=="likelihood" else counts
+    if convergence_criterion=="likelihood":
+        prev = log_likelihood(matrix, counts)
+    else:
+        prev = counts
 
     converged = False
     curr_cycle = 0
@@ -74,10 +79,16 @@ def run_em(matrix, cycles=100, tolerance=1e-4, convergence_criterion="likelihood
         counts = m_step(matrix=e_matrix)
 
         # Compute the new log-likelihood (depending on convergence criterion)
-        curr = log_likelihood(matrix, counts) if convergence_criterion=="likelihood" else counts
+        if convergence_criterion=="likelihood":
+            curr = log_likelihood(matrix, counts)
+        else:
+            curr = counts
 
         # Check for convergence
-        diff = np.abs(curr-prev) if convergence_criterion=="likelihood" else np.abs(curr-prev).sum()
+        if convergence_criterion=="likelihood":
+            diff = np.abs(curr-prev)
+        else:
+            diff = np.abs(curr-prev).sum()
         if diff < tolerance:
             converged = True
             break

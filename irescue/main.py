@@ -186,7 +186,7 @@ def parseArguments():
         "--convergence-criterion",
         type=str,
         metavar="STR",
-        choices=["likelihood", "parameters"],
+        choices=["likelihood", "estimates"],
         default="likelihood",
         help=(
             "Criterion to define convergence. "
