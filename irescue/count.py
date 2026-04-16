@@ -94,7 +94,7 @@ def parse_maps(maps_file, feature_index):
 
 
 def compute_cell_counts(
-    equivalence_classes, features_index, max_iters, tolerance, dumpEC, no_umi
+    equivalence_classes, features_index, max_iters, tolerance, dumpEC, no_umi, exclude_low_support, convergence_criterion
 ):
     """
     Calculate TE counts of a single cell, given a list of equivalence classes.
@@ -259,18 +259,42 @@ def compute_cell_counts(
         em_array = em_array.tocsr()
 
         # save an array with features > 0, as in em_array order
-        tokeep = np.flatnonzero(em_array.sum(axis=0))
+        if not exclude_low_support:
+            tokeep = np.flatnonzero(em_array.sum(axis=0))
+        else:
+            # only keep features supported by >=2 multimapping reads,
+            # or >=1 multimapping and >=1 uniquely mapping
+            tokeep1 = np.where((em_array.sum(axis=0) >= 2).A1)[0]
+            tokeep2 = np.intersect1d(
+                # (-1 because of 0-based indexing of em_array
+                #  against 1-based indexing of features)
+                np.array(list(counts.keys())) - 1,
+                np.where((em_array.sum(axis=0) == 1).A1)[0]
+            )
+            tokeep = np.union1d(tokeep1, tokeep2)
+
         # remove unmapped features from em_array
         em_array = em_array[:, tokeep]
-        # run EM
-        em_counts, em_stats = run_em(
-            em_array, cycles=max_iters, tolerance=tolerance
-        )
-        em_counts = em_counts * em_array.shape[0]
 
-        for i, c in zip(tokeep + 1, em_counts):
-            if c > 0:
-                counts[i] += c
+        # removing some features may yield empty rows
+        # (not necessary if exclude_low_support is disabled)
+        if exclude_low_support:
+            em_array = em_array[(em_array.sum(axis=1)>0).A1, :]
+
+        if em_array.shape[1] > 0:
+            # run EM
+            em_counts, em_stats = run_em(
+                em_array, cycles=max_iters, tolerance=tolerance, convergence_criterion=convergence_criterion
+            )
+            em_counts = em_counts * em_array.shape[0]
+
+            # add EM-optimized counts to uniquely mapped counts
+            # (add +1 to features to multimapped features to keep
+            #  because of 0-based indexing of em_array against
+            #  1-based indexing of features)
+            for i, c in zip(tokeep + 1, em_counts):
+                if c > 0:
+                    counts[i] += c
     return dict(counts), dump, em_stats
 
 
@@ -292,6 +316,8 @@ def run_count(
     features_index,
     tmpdir,
     no_umi,
+    exclude_low_support,
+    convergence_criterion,
     dumpEC,
     max_iters,
     tolerance,
@@ -323,11 +349,13 @@ def run_count(
                 tolerance=tolerance,
                 dumpEC=dumpEC,
                 no_umi=no_umi,
+                exclude_low_support=exclude_low_support,
+                convergence_criterion=convergence_criterion
             )
             writerr(
                 f"[{taskn}] Write cell {cellidx} ({cellbarcode.decode()}). "
                 f"EM cycles: {em_stats[0]}. Converged: {em_stats[1]}. "
-                f"Log likelihood: {em_stats[2]}. Increment: {em_stats[3]}.",
+                f"Log likelihood: {em_stats[2] if convergence_criterion=='likelihood' else 'Not computed because of convergence criterion choice'}. Increment: {em_stats[3]}.",
                 level=1,
                 send=verbose,
             )
