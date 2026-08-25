@@ -8,7 +8,7 @@
 # IRescue - <ins>I</ins>nterspersed <ins>Re</ins>peats <ins>s</ins>ingle-<ins>c</ins>ell q<ins>u</ins>antifi<ins>e</ins>r
 
 <img align="right" height="160" src="docs/logo.png">
-IRescue quantifies the expression fo transposable elements (TEs) subfamilies in single cell RNA sequencing (scRNA-seq) data, performing UMI-deduplication with sequencing errors correction (for 10X-like libraries) or read quantification (for UMI-less libraries, e.g. SMART-seq) followed by probabilistic assignment of multi-mapping reads by an Expectation-Maximization (EM) procedure. The output is written on a sparse matrix compatible with Seurat, Scanpy and other toolkits.
+IRescue quantifies the expression fo transposable elements (TEs) at locus- or subfamily-level in single cell RNA sequencing (scRNA-seq) data, performing UMI-deduplication with sequencing errors correction (for 10X-like libraries) or read quantification (for UMI-less libraries, e.g. SMART-seq) followed by probabilistic assignment of multi-mapping reads by an Expectation-Maximization (EM) procedure. The output is written on a sparse matrix compatible with Seurat, Scanpy and other toolkits.
 
 ## Content
 
@@ -86,7 +86,11 @@ irescue --help
 
 Quick start:
 ```sh
+# Subfamily-level quantification
 irescue -b genome_alignments.bam -g hg38
+
+# Locus-level quantification
+irescue -b genome_alignments.bam -g hg38 --locus-level
 ```
 
 ### <a name="reqin"></a>Required inputs
@@ -97,15 +101,28 @@ It can be obtained by aligning reads using [STARsolo](https://github.com/alexdob
 
 ### <a name="annot"></a>Custom annotation
 
-A custom repeats annotation can be provided in BED format (e.g. `-r TE.bed`) of at least four columns, with the fourth column being the TE feature name (e.g. subfamily name).
+A custom repeats annotation can be provided in BED format (e.g. `-r TE.bed`) of at least four columns, with the fourth column being the TE feature name (e.g. locus or subfamily name).
+
+### <a name="locus"></a>TE locus-level quantification
+
+Starting from version 1.2.0, locus-level quantification can be performed either by automatically download the repeats annotation:
+```bash
+irescue -b genome_alignments.bam -g hg38 --locus-level
+```
+or by providing a custom annotation in BED format with locus-level identifiers in the fourth column (see above):
+```bash
+irescue -b genome_alignments.bam -r TE_locus_level.bed
+```
 
 ### <a name="noumi"></a>UMI-less libraries (e.g. SMART-seq)
 
-**Only in pre-release version `1.2.0b2` or later.**
-
 You can ignore the UMI sequence (thus skipping UMI-deduplication entirely) with `--no-umi`:
 ```bash
+# Subfamily-level
 irescue -b genome_alignments.bam -g hg38 --no-umi
+
+# Locus-level
+irescue -b genome_alignments.bam -g hg38 --no-umi --locus-level
 ```
 
 NB: the BAM tag for cell barcodes sometimes is `RG` instead of `CB`. In such case, add the parameter `--cb-tag RG`.
